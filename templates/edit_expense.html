@@ -1,23 +1,112 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2 class="mb-4">Edit Expense</h2>
-<form method="POST">
-    <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <input type="text" class="form-control" id="description" name="description" value="{{ expense.description }}" required>
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="mb-3">Edit Expense</h2>
     </div>
-    <div class="mb-3">
-        <label for="amount" class="form-label">Amount</label>
-        <input type="number" class="form-control" id="amount" name="amount" step="0.01" value="{{ expense.amount }}" required>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST" class="p-2">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" 
+                               value="{{ expense.description }}" required>
+                        <div class="form-text">Brief description of the expense</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01"
+                                       value="{{ expense.amount }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" name="date" 
+                                   value="{{ expense.date }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="" disabled>Select a category</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {% if expense.category == category %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags" 
+                               value="{{ tags }}" placeholder="e.g. groceries, dining, work">
+                        <div class="form-text">Comma-separated tags to categorize your expense</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="recurring" name="recurring" 
+                                   {% if expense.recurring %}checked{% endif %}>
+                            <label class="form-check-label" for="recurring">Recurring Expense</label>
+                        </div>
+                        
+                        <div id="recurring-options" class="mt-2 ps-4 {% if not expense.recurring %}d-none{% endif %}">
+                            <select class="form-select" id="recurring_interval" name="recurring_interval">
+                                <option value="weekly" {% if expense.recurring_interval == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="monthly" {% if expense.recurring_interval == 'monthly' %}selected{% endif %}>Monthly</option>
+                                <option value="yearly" {% if expense.recurring_interval == 'yearly' %}selected{% endif %}>Yearly</option>
+                            </select>
+                            <div class="form-text">How often this expense recurs</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Update Expense
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="category" class="form-label">Category</label>
-        <input type="text" class="form-control" id="category" name="category" value="{{ expense.category }}" required>
-    </div>
-    <div class="mb-3">
-        <label for="date" class="form-label">Date</label>
-        <input type="date" class="form-control" id="date" name="date" value="{{ expense.date }}" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Update Expense</button>
-</form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide recurring options based on checkbox
+    const recurringCheckbox = document.getElementById('recurring');
+    const recurringOptions = document.getElementById('recurring-options');
+    
+    recurringCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            recurringOptions.classList.remove('d-none');
+        } else {
+            recurringOptions.classList.add('d-none');
+        }
+    });
+    
+    // Fetch existing tags for autocomplete
+    fetch('/api/tags')
+        .then(response => response.json())
+        .then(tags => {
+            // Implementation of tags autocomplete would go here
+            console.log('Available tags:', tags);
+        })
+        .catch(error => console.error('Error fetching tags:', error));
+});
+</script>
 {% endblock %}

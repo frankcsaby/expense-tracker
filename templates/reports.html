@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="mb-3">Expense Reports</h2>
+    </div>
+</div>
+
+<!-- Report Controls -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Report Options</h5>
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="grouping" class="form-label">Group By</label>
+                <select class="form-select" id="grouping" name="grouping">
+                    <option value="month" {% if grouping == 'month' %}selected{% endif %}>Month</option>
+                    <option value="week" {% if grouping == 'week' %}selected{% endif %}>Week</option>
+                    <option value="category" {% if grouping == 'category' %}selected{% endif %}>Category</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="from_date" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="to_date" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Generate Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-light shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Expenses</h5>
+                <h3 class="card-text text-primary">{{ currency.symbol }}{{ summary.grand_total|round(2) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Number of Expenses</h5>
+                <h3 class="card-text text-success">{{ summary.total_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Average Amount</h5>
+                <h3 class="card-text text-info">{{ currency.symbol }}{{ summary.average|round(2) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Table -->
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0">{{ report_type }} Report</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    {% if grouping == 'category' %}
+                    <th>Category</th>
+                    {% else %}
+                    <th>Period</th>
+                    {% endif %}
+                    <th>Total</th>
+                    <th>Count</th>
+                    <th>Average</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report_data %}
+                <tr>
+                    {% if grouping == 'category' %}
+                    <td><span class="badge bg-secondary">{{ item.category }}</span></td>
+                    {% else %}
+                    <td>{{ item.period }}</td>
+                    {% endif %}
+                    <td>{{ currency.symbol }}{{ item.total|round(2) }}</td>
+                    <td>{{ item.count }}</td>
+                    <td>{{ currency.symbol }}{{ (item.total / item.count)|round(2) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-4">
+                        <div class="alert alert-info mb-0">
+                            No data available for the selected criteria.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Expenses
+    </a>
+</div>
+{% endblock %}

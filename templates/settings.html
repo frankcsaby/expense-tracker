@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="mb-3">Settings</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <!-- Currency Settings -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Currency Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('set_currency') }}" class="p-2">
+                    <div class="mb-3">
+                        <label for="currency" class="form-label">Select Currency</label>
+                        <select class="form-select" id="currency" name="currency">
+                            {% for code, details in currencies.items() %}
+                            <option value="{{ code }}" {% if code == current_currency %}selected{% endif %}>
+                                {{ details.name }} ({{ details.symbol }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">This will change the currency symbol displayed throughout the app.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Save Currency
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Theme Settings -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Theme Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="p-2">
+                    <h5 class="mb-3">Theme Options</h5>
+                    
+                    <div class="d-flex flex-wrap gap-3 justify-content-center">
+                        <form method="POST" action="{{ url_for('toggle_theme') }}">
+                            <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
+                            <input type="hidden" name="theme" value="light">
+                            <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_theme == 'light' else 'btn-outline-primary' }}">
+                                <i class="bi bi-sun-fill"></i> Light Mode
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="{{ url_for('toggle_theme') }}">
+                            <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
+                            <input type="hidden" name="theme" value="dark">
+                            <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_theme == 'dark' else 'btn-outline-primary' }}">
+                                <i class="bi bi-moon-fill"></i> Dark Mode
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="{{ url_for('toggle_theme') }}">
+                            <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
+                            <input type="hidden" name="theme" value="freaky">
+                            <button type="submit" class="btn btn-lg {{ 'btn-danger' if current_theme == 'freaky' else 'btn-outline-danger' }}" style="{{ 'animation: pulse 1s infinite' if current_theme == 'freaky' else '' }}">
+                                <i class="bi bi-emoji-dizzy-fill"></i> Freaky Mode
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-2">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Expenses
+    </a>
+</div>
+{% endblock %}

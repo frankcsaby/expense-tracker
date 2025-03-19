@@ -1,30 +1,173 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="{{ 'dark' if request.cookies.get('theme') == 'freaky' else request.cookies.get('theme', 'light') }}" class="{{ 'freaky-mode' if request.cookies.get('theme') == 'freaky' else '' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Tracker</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Dark mode specific styles */
+        [data-bs-theme="dark"] {
+            --bs-body-bg: #222;
+            --bs-body-color: #f8f9fa;
+        }
+        
+        [data-bs-theme="dark"] .card {
+            background-color: #333;
+            border-color: #444;
+        }
+        
+        [data-bs-theme="dark"] .bg-light {
+            background-color: #333 !important;
+        }
+        
+        [data-bs-theme="dark"] .text-muted {
+            color: #adb5bd !important;
+        }
+        
+        [data-bs-theme="dark"] .table {
+            color: #e9ecef;
+        }
+        
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #333;
+            border-color: #555;
+            color: #f8f9fa;
+        }
+        
+        /* Basic animations for freaky mode */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .freaky-mode .bi-cash-coin {
+            display: inline-block;
+            animation: spin 3s linear infinite;
+        }
+        
+        .freaky-mode .btn-primary {
+            background: linear-gradient(45deg, #ff00cc, #3333ff);
+            border: none;
+        }
+    </style>
 </head>
 <body>
-    <header class="bg-dark text-white py-4">
-    <div class="container">
-        <h1 class="text-center">Expense Tracker</h1>
-        <nav class="d-flex justify-content-center gap-3">
-            <a href="{{ url_for('index') }}" class="btn btn-outline-light">Home</a>
-            <a href="{{ url_for('add_expense') }}" class="btn btn-outline-light">Add Expense</a>
-            <a href="{{ url_for('analytics') }}" class="btn btn-outline-light">Analytics</a>
-        </nav>
-    </div>
-</header>
-    <main class="container my-5">
+    <header class="bg-dark text-white py-3 shadow">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-cash-coin me-2"></i> Expense Tracker
+                </h1>
+                <nav>
+                    <ul class="nav">
+                        <li class="nav-item">
+                            <a href="{{ url_for('index') }}" class="nav-link text-white">
+                                <i class="bi bi-house"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('add_expense') }}" class="nav-link text-white">
+                                <i class="bi bi-plus-circle"></i> Add Expense
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('analytics') }}" class="nav-link text-white">
+                                <i class="bi bi-graph-up"></i> Analytics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('manage_budgets') }}" class="nav-link text-white">
+                                <i class="bi bi-wallet2"></i> Budgets
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('reports') }}" class="nav-link text-white">
+                                <i class="bi bi-file-earmark-text"></i> Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('settings') }}" class="nav-link text-white">
+                                <i class="bi bi-gear"></i> Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <form method="POST" action="{{ url_for('toggle_theme') }}" class="d-inline">
+                                <input type="hidden" name="redirect_url" value="{{ request.url }}">
+                                <button type="submit" class="nav-link text-white bg-transparent border-0">
+                                    {% if request.cookies.get('theme') == 'dark' %}
+                                    <i class="bi bi-sun-fill"></i>
+                                    {% elif request.cookies.get('theme') == 'freaky' %}
+                                    <i class="bi bi-emoji-neutral-fill"></i>
+                                    {% else %}
+                                    <i class="bi bi-moon-fill"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         {% block content %}{% endblock %}
     </main>
 
+    <footer class="py-3 mt-5">
+        <div class="container text-center text-muted">
+            <small>&copy; 2025 Expense Tracker | All Rights Reserved</small>
+        </div>
+    </footer>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Dark mode Chart.js configuration -->
+    <script>
+        // Configure Chart.js for dark mode support
+        document.addEventListener('DOMContentLoaded', function() {
+            const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            
+            // Set Chart.js defaults based on theme
+            if (isDarkMode) {
+                Chart.defaults.color = '#f8f9fa';
+                Chart.defaults.borderColor = '#444';
+                Chart.defaults.scale.grid.color = '#444';
+            }
+        });
+    </script>
+    
+    <!-- Page-specific scripts -->
+    {% block scripts %}{% endblock %}
 </body>
 </html>

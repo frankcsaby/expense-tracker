@@ -1,36 +1,140 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2 class="mb-4">Expenses</h2>
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="mb-3">Expenses</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <h4>Total: <span class="badge bg-primary">{{ currency.symbol }}{{ total|round(2) }}</span></h4>
+        <a href="{{ url_for('set_currency') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-gear"></i> Change Currency ({{ currency_code }})
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Search & Filter</h5>
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <label for="category" class="form-label">Category</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if category == category_filter %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="tag" class="form-label">Tag</label>
+                <select class="form-select" id="tag" name="tag">
+                    <option value="">All Tags</option>
+                    {% for tag in tags %}
+                    <option value="{{ tag }}" {% if tag == tag_filter %}selected{% endif %}>{{ tag }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="from_date" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}">
+            </div>
+            <div class="col-md-2">
+                <label for="to_date" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Expenses Table -->
+<div class="table-responsive card shadow-sm">
+    <table class="table table-striped table-hover mb-0">
         <thead class="table-dark">
             <tr>
                 <th>Description</th>
                 <th>Amount</th>
                 <th>Category</th>
                 <th>Date</th>
-                <th>Actions</th> <!-- Actions column -->
+                <th>Tags</th>
+                <th>Recurring</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for expense in expenses %}
             <tr>
                 <td>{{ expense.description }}</td>
-                <td>${{ expense.amount }}</td>
-                <td>{{ expense.category }}</td>
+                <td>{{ currency.symbol }}{{ expense.amount }}</td>
+                <td><span class="badge bg-secondary">{{ expense.category }}</span></td>
                 <td>{{ expense.date }}</td>
                 <td>
+                    {% for tag in (expense.tags or '').split(',') if tag %}
+                    <span class="badge bg-info text-dark">{{ tag }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if expense.recurring %}
+                    <span class="badge bg-warning text-dark">
+                        {% if expense.recurring_interval == 'weekly' %}
+                        Weekly
+                        {% elif expense.recurring_interval == 'monthly' %}
+                        Monthly
+                        {% elif expense.recurring_interval == 'yearly' %}
+                        Yearly
+                        {% else %}
+                        Yes
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
                     <!-- Edit Button -->
-                    <a href="{{ url_for('edit_expense', id=expense.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{{ url_for('edit_expense', id=expense.id) }}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil"></i>
+                    </a>
 
                     <!-- Delete Button -->
                     <form action="{{ url_for('delete_expense', id=expense.id) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this expense?')">Delete</button>
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this expense?')">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                        No expenses found. <a href="{{ url_for('add_expense') }}" class="alert-link">Add your first expense</a>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('add_expense') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Add New Expense
+    </a>
+    <a href="{{ url_for('export_data') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-download"></i> Export Data
+    </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add any JavaScript needed for this page
+</script>
 {% endblock %}
