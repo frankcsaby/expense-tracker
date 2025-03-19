@@ -2,7 +2,7 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2 class="mb-3">Add New Expense</h2>
+        <h2 class="mb-3">{{ t('Add New Expense') }}</h2>
     </div>
 </div>
 
@@ -12,34 +12,34 @@
             <div class="card-body">
                 <form method="POST" class="p-2">
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
+                        <label for="description" class="form-label">{{ t('Description') }}</label>
                         <input type="text" class="form-control" id="description" name="description" 
                                value="{{ form_data.description if form_data else '' }}" required>
-                        <div class="form-text">Brief description of the expense</div>
+                        <div class="form-text">{{ t('Brief description of the expense') }}</div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="amount" class="form-label">Amount</label>
+                            <label for="amount" class="form-label">{{ t('Amount') }}</label>
                             <div class="input-group">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">{{ session.get('currency', 'USD') }}</span>
                                 <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01"
                                        value="{{ form_data.amount if form_data else '' }}" required>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
-                            <label for="date" class="form-label">Date</label>
+                            <label for="date" class="form-label">{{ t('Date') }}</label>
                             <input type="date" class="form-control" id="date" name="date" 
                                    value="{{ form_data.date if form_data else '' }}" required>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="category" class="form-label">Category</label>
+                        <label for="category" class="form-label">{{ t('Category') }}</label>
                         <select class="form-select" id="category" name="category" required>
-                            <option value="" disabled {% if not form_data or not form_data.category %}selected{% endif %}>Select a category</option>
-                            {% for category in categories %}
+                            <option value="" disabled {% if not form_data or not form_data.category %}selected{% endif %}>{{ t('Select a category') }}</option>
+                            {% for category in get_categories() %}
                             <option value="{{ category }}" {% if form_data and form_data.category == category %}selected{% endif %}>
                                 {{ category }}
                             </option>
@@ -48,34 +48,34 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="tags" class="form-label">Tags</label>
+                        <label for="tags" class="form-label">{{ t('Tags') }}</label>
                         <input type="text" class="form-control" id="tags" name="tags" 
-                               value="{{ form_data.tags if form_data else '' }}" placeholder="e.g. groceries, dining, work">
-                        <div class="form-text">Comma-separated tags to categorize your expense</div>
+                               value="{{ form_data.tags if form_data else '' }}" placeholder="{{ t('e.g. groceries, dining, work') }}">
+                        <div class="form-text">{{ t('Comma-separated tags to categorize your expense') }}</div>
                     </div>
                     
                     <div class="mb-4">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="recurring" name="recurring" 
                                    {% if form_data and form_data.recurring %}checked{% endif %}>
-                            <label class="form-check-label" for="recurring">Recurring Expense</label>
+                            <label class="form-check-label" for="recurring">{{ t('Recurring Expense') }}</label>
                         </div>
                         
                         <div id="recurring-options" class="mt-2 ps-4 {% if not form_data or not form_data.recurring %}d-none{% endif %}">
                             <select class="form-select" id="recurring_interval" name="recurring_interval">
-                                <option value="weekly" {% if form_data and form_data.recurring_interval == 'weekly' %}selected{% endif %}>Weekly</option>
-                                <option value="monthly" {% if form_data and form_data.recurring_interval == 'monthly' %}selected{% endif %}>Monthly</option>
-                                <option value="yearly" {% if form_data and form_data.recurring_interval == 'yearly' %}selected{% endif %}>Yearly</option>
+                                <option value="weekly" {% if form_data and form_data.recurring_interval == 'weekly' %}selected{% endif %}>{{ t('Weekly') }}</option>
+                                <option value="monthly" {% if form_data and form_data.recurring_interval == 'monthly' %}selected{% endif %}>{{ t('Monthly') }}</option>
+                                <option value="yearly" {% if form_data and form_data.recurring_interval == 'yearly' %}selected{% endif %}>{{ t('Yearly') }}</option>
                             </select>
-                            <div class="form-text">How often this expense recurs</div>
+                            <div class="form-text">{{ t('How often this expense recurs') }}</div>
                         </div>
                     </div>
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-2"></i>Add Expense
+                            <i class="bi bi-plus-circle me-2"></i>{{ t('Add Expense') }}
                         </button>
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">{{ t('Cancel') }}</a>
                     </div>
                 </form>
             </div>

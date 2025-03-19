@@ -2,7 +2,7 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2 class="mb-3">Settings</h2>
+        <h2 class="mb-3">{{ t('Settings') }}</h2>
     </div>
 </div>
 
@@ -11,7 +11,7 @@
         <!-- Currency Settings -->
         <div class="card shadow-sm mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Currency Settings</h5>
+                <h5 class="mb-0">{{ t('Currency Settings') }}</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('set_currency') }}" class="p-2">
@@ -39,18 +39,18 @@
         <!-- Theme Settings -->
         <div class="card shadow-sm mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Theme Settings</h5>
+                <h5 class="mb-0">{{ t('Theme Settings') }}</h5>
             </div>
             <div class="card-body">
                 <div class="p-2">
-                    <h5 class="mb-3">Theme Options</h5>
+                    <h5 class="mb-3">{{ t('Theme Options') }}</h5>
                     
                     <div class="d-flex flex-wrap gap-3 justify-content-center">
                         <form method="POST" action="{{ url_for('toggle_theme') }}">
                             <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
                             <input type="hidden" name="theme" value="light">
                             <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_theme == 'light' else 'btn-outline-primary' }}">
-                                <i class="bi bi-sun-fill"></i> Light Mode
+                                <i class="bi bi-sun-fill"></i> {{ t('Light Mode') }}
                             </button>
                         </form>
                         
@@ -58,15 +58,45 @@
                             <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
                             <input type="hidden" name="theme" value="dark">
                             <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_theme == 'dark' else 'btn-outline-primary' }}">
-                                <i class="bi bi-moon-fill"></i> Dark Mode
+                                <i class="bi bi-moon-fill"></i> {{ t('Dark Mode') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Language Settings -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{{ t('Language Settings') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="p-2">
+                    <h5 class="mb-3">{{ t('Select Language') }}</h5>
+                    
+                    <div class="d-flex flex-wrap gap-3 justify-content-center">
+                        <form method="POST" action="{{ url_for('set_language') }}">
+                            <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
+                            <input type="hidden" name="language" value="en">
+                            <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_language == 'en' else 'btn-outline-primary' }}">
+                                <i class="bi bi-globe"></i> English
                             </button>
                         </form>
                         
-                        <form method="POST" action="{{ url_for('toggle_theme') }}">
+                        <form method="POST" action="{{ url_for('set_language') }}">
                             <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
-                            <input type="hidden" name="theme" value="freaky">
-                            <button type="submit" class="btn btn-lg {{ 'btn-danger' if current_theme == 'freaky' else 'btn-outline-danger' }}" style="{{ 'animation: pulse 1s infinite' if current_theme == 'freaky' else '' }}">
-                                <i class="bi bi-emoji-dizzy-fill"></i> Freaky Mode
+                            <input type="hidden" name="language" value="hu">
+                            <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_language == 'hu' else 'btn-outline-primary' }}">
+                                <i class="bi bi-globe"></i> Hungarian
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="{{ url_for('set_language') }}">
+                            <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
+                            <input type="hidden" name="language" value="ja">
+                            <button type="submit" class="btn btn-lg {{ 'btn-primary' if current_language == 'ja' else 'btn-outline-primary' }}">
+                                <i class="bi bi-globe"></i> Japanese
                             </button>
                         </form>
                     </div>

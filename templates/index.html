@@ -2,12 +2,12 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h2 class="mb-3">Expenses</h2>
+        <h2 class="mb-3">{{ t('Expenses') }}</h2>
     </div>
     <div class="col-md-4 text-end">
-        <h4>Total: <span class="badge bg-primary">{{ currency.symbol }}{{ total|round(2) }}</span></h4>
+        <h4>{{ t('Total') }}: <span class="badge bg-primary">{{ currency.symbol }}{{ total|round(2) }}</span></h4>
         <a href="{{ url_for('set_currency') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-gear"></i> Change Currency ({{ currency_code }})
+            <i class="bi bi-gear"></i> {{ t('Change Currency') }} ({{ currency_code }})
         </a>
     </div>
 </div>
@@ -15,40 +15,40 @@
 <!-- Search & Filter -->
 <div class="card mb-4 shadow-sm">
     <div class="card-body">
-        <h5 class="card-title mb-3">Search & Filter</h5>
+        <h5 class="card-title mb-3">{{ t('Search & Filter') }}</h5>
         <form method="GET" class="row g-3">
             <div class="col-md-3">
-                <label for="search" class="form-label">Search</label>
+                <label for="search" class="form-label">{{ t('Search') }}</label>
                 <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}">
             </div>
             <div class="col-md-2">
-                <label for="category" class="form-label">Category</label>
+                <label for="category" class="form-label">{{ t('Category') }}</label>
                 <select class="form-select" id="category" name="category">
-                    <option value="">All Categories</option>
+                    <option value="">{{ t('All Categories') }}</option>
                     {% for category in categories %}
-                    <option value="{{ category }}" {% if category == category_filter %}selected{% endif %}>{{ category }}</option>
+                    <option value="{{ category }}" {% if category == category_filter %}selected{% endif %}>{{ t(category) }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="tag" class="form-label">Tag</label>
+                <label for="tag" class="form-label">{{ t('Tag') }}</label>
                 <select class="form-select" id="tag" name="tag">
-                    <option value="">All Tags</option>
+                    <option value="">{{ t('All Tags') }}</option>
                     {% for tag in tags %}
                     <option value="{{ tag }}" {% if tag == tag_filter %}selected{% endif %}>{{ tag }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="from_date" class="form-label">From Date</label>
+                <label for="from_date" class="form-label">{{ t('From Date') }}</label>
                 <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}">
             </div>
             <div class="col-md-2">
-                <label for="to_date" class="form-label">To Date</label>
+                <label for="to_date" class="form-label">{{ t('To Date') }}</label>
                 <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}">
             </div>
             <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary">Filter</button>
+                <button type="submit" class="btn btn-primary">{{ t('Filter') }}</button>
             </div>
         </form>
     </div>
@@ -59,13 +59,13 @@
     <table class="table table-striped table-hover mb-0">
         <thead class="table-dark">
             <tr>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Category</th>
-                <th>Date</th>
-                <th>Tags</th>
-                <th>Recurring</th>
-                <th>Actions</th>
+                <th>{{ t('Description') }}</th>
+                <th>{{ t('Amount') }}</th>
+                <th>{{ t('Category') }}</th>
+                <th>{{ t('Date') }}</th>
+                <th>{{ t('Tags') }}</th>
+                <th>{{ t('Recurring') }}</th>
+                <th>{{ t('Actions') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -73,7 +73,7 @@
             <tr>
                 <td>{{ expense.description }}</td>
                 <td>{{ currency.symbol }}{{ expense.amount }}</td>
-                <td><span class="badge bg-secondary">{{ expense.category }}</span></td>
+                <td><span class="badge bg-secondary">{{ t(expense.category) }}</span></td>
                 <td>{{ expense.date }}</td>
                 <td>
                     {% for tag in (expense.tags or '').split(',') if tag %}
@@ -84,26 +84,26 @@
                     {% if expense.recurring %}
                     <span class="badge bg-warning text-dark">
                         {% if expense.recurring_interval == 'weekly' %}
-                        Weekly
+                        {{ t('Weekly') }}
                         {% elif expense.recurring_interval == 'monthly' %}
-                        Monthly
+                        {{ t('Monthly') }}
                         {% elif expense.recurring_interval == 'yearly' %}
-                        Yearly
+                        {{ t('Yearly') }}
                         {% else %}
-                        Yes
+                        {{ t('Yes') }}
                         {% endif %}
                     </span>
                     {% endif %}
                 </td>
                 <td>
                     <!-- Edit Button -->
-                    <a href="{{ url_for('edit_expense', id=expense.id) }}" class="btn btn-sm btn-warning">
+                    <a href="{{ url_for('edit_expense', id=expense.id) }}" class="btn btn-sm btn-warning" title="{{ t('Edit') }}">
                         <i class="bi bi-pencil"></i>
                     </a>
 
                     <!-- Delete Button -->
                     <form action="{{ url_for('delete_expense', id=expense.id) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this expense?')">
+                        <button type="submit" class="btn btn-sm btn-danger" title="{{ t('Delete') }}" onclick="return confirm('{{ t('Are you sure you want to delete this expense?') }}')">
                             <i class="bi bi-trash"></i>
                         </button>
                     </form>
@@ -113,7 +113,7 @@
             <tr>
                 <td colspan="7" class="text-center py-4">
                     <div class="alert alert-info mb-0">
-                        No expenses found. <a href="{{ url_for('add_expense') }}" class="alert-link">Add your first expense</a>
+                        {{ t('No expenses found.') }} <a href="{{ url_for('add_expense') }}" class="alert-link">{{ t('Add your first expense') }}</a>
                     </div>
                 </td>
             </tr>
@@ -124,10 +124,10 @@
 
 <div class="d-flex justify-content-between mt-4">
     <a href="{{ url_for('add_expense') }}" class="btn btn-success">
-        <i class="bi bi-plus-circle"></i> Add New Expense
+        <i class="bi bi-plus-circle"></i> {{ t('Add New Expense') }}
     </a>
     <a href="{{ url_for('export_data') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-download"></i> Export Data
+        <i class="bi bi-download"></i> {{ t('Export Data') }}
     </a>
 </div>
 

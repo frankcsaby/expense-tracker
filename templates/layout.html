@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ 'dark' if request.cookies.get('theme') == 'freaky' else request.cookies.get('theme', 'light') }}" class="{{ 'freaky-mode' if request.cookies.get('theme') == 'freaky' else '' }}">
+<html lang="{{ session.get('language', 'en') }}" data-bs-theme="{{ request.cookies.get('theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,28 +44,6 @@
             border-color: #555;
             color: #f8f9fa;
         }
-        
-        /* Basic animations for freaky mode */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        .freaky-mode .bi-cash-coin {
-            display: inline-block;
-            animation: spin 3s linear infinite;
-        }
-        
-        .freaky-mode .btn-primary {
-            background: linear-gradient(45deg, #ff00cc, #3333ff);
-            border: none;
-        }
     </style>
 </head>
 <body>
@@ -73,38 +51,38 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="h3 mb-0">
-                    <i class="bi bi-cash-coin me-2"></i> Expense Tracker
+                    <i class="bi bi-cash-coin me-2"></i> {{ t('Expense Tracker') }}
                 </h1>
                 <nav>
                     <ul class="nav">
                         <li class="nav-item">
                             <a href="{{ url_for('index') }}" class="nav-link text-white">
-                                <i class="bi bi-house"></i> Home
+                                <i class="bi bi-house"></i> {{ t('Home') }}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ url_for('add_expense') }}" class="nav-link text-white">
-                                <i class="bi bi-plus-circle"></i> Add Expense
+                                <i class="bi bi-plus-circle"></i> {{ t('Add Expense') }}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ url_for('analytics') }}" class="nav-link text-white">
-                                <i class="bi bi-graph-up"></i> Analytics
+                                <i class="bi bi-graph-up"></i> {{ t('Analytics') }}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ url_for('manage_budgets') }}" class="nav-link text-white">
-                                <i class="bi bi-wallet2"></i> Budgets
+                                <i class="bi bi-wallet2"></i> {{ t('Budgets') }}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ url_for('reports') }}" class="nav-link text-white">
-                                <i class="bi bi-file-earmark-text"></i> Reports
+                                <i class="bi bi-file-earmark-text"></i> {{ t('Reports') }}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ url_for('settings') }}" class="nav-link text-white">
-                                <i class="bi bi-gear"></i> Settings
+                                <i class="bi bi-gear"></i> {{ t('Settings') }}
                             </a>
                         </li>
                         <li class="nav-item">
@@ -113,8 +91,6 @@
                                 <button type="submit" class="nav-link text-white bg-transparent border-0">
                                     {% if request.cookies.get('theme') == 'dark' %}
                                     <i class="bi bi-sun-fill"></i>
-                                    {% elif request.cookies.get('theme') == 'freaky' %}
-                                    <i class="bi bi-emoji-neutral-fill"></i>
                                     {% else %}
                                     <i class="bi bi-moon-fill"></i>
                                     {% endif %}
