@@ -41,3 +41,11 @@ header {
 .btn-primary:hover {
     background-color: #0b5ed7;
 }
+
+/* Language flag icons */
+.language-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+    display: inline-block;
+}
