@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">Expense Analytics</h2>
+
+<!-- Weekly Totals -->
+<h3 class="mt-4">Weekly Totals</h3>
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Category</th>
+            <th>Total Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in weekly_totals %}
+        <tr>
+            <td>{{ item.category }}</td>
+            <td>${{ item.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Monthly Totals -->
+<h3 class="mt-4">Monthly Totals</h3>
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Category</th>
+            <th>Total Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in monthly_totals %}
+        <tr>
+            <td>{{ item.category }}</td>
+            <td>${{ item.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Yearly Totals -->
+<h3 class="mt-4">Yearly Totals</h3>
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Category</th>
+            <th>Total Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in yearly_totals %}
+        <tr>
+            <td>{{ item.category }}</td>
+            <td>${{ item.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
