@@ -8,21 +8,243 @@ from contextlib import contextmanager
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
 
-# Available currencies
+# Available currencies with language codes
 CURRENCIES = {
-    'USD': {'symbol': '$', 'name': 'US Dollar'},
-    'EUR': {'symbol': '€', 'name': 'Euro'},
-    'GBP': {'symbol': '£', 'name': 'British Pound'},
-    'JPY': {'symbol': '¥', 'name': 'Japanese Yen'},
-    'CAD': {'symbol': 'C$', 'name': 'Canadian Dollar'},
-    'HUF': {'symbol': 'Ft', 'name': 'Hungarian Forint'}
+    'USD': {'symbol': '$', 'name': 'US Dollar', 'language': 'en'},
+    'EUR': {'symbol': '€', 'name': 'Euro', 'language': 'en'},
+    'GBP': {'symbol': '£', 'name': 'British Pound', 'language': 'en'},
+    'JPY': {'symbol': '¥', 'name': 'Japanese Yen', 'language': 'ja'},
+    'CAD': {'symbol': 'C$', 'name': 'Canadian Dollar', 'language': 'en'},
+    'HUF': {'symbol': 'Ft', 'name': 'Hungarian Forint', 'language': 'hu'}
 }
 
-# Predefined categories
+# Translations
+TRANSLATIONS = {
+    'en': {
+        'Food': 'Food',
+        'Transportation': 'Transportation',
+        'Housing': 'Housing',
+        'Utilities': 'Utilities',
+        'Entertainment': 'Entertainment',
+        'Healthcare': 'Healthcare',
+        'Education': 'Education',
+        'Shopping': 'Shopping',
+        'Travel': 'Travel',
+        'Miscellaneous': 'Miscellaneous',
+        'Home': 'Home',
+        'Add Expense': 'Add Expense',
+        'Analytics': 'Analytics',
+        'Budgets': 'Budgets',
+        'Reports': 'Reports',
+        'Settings': 'Settings',
+        'Description': 'Description',
+        'Amount': 'Amount',
+        'Category': 'Category',
+        'Date': 'Date',
+        'Actions': 'Actions',
+        'Save': 'Save',
+        'Cancel': 'Cancel',
+        'Edit': 'Edit',
+        'Delete': 'Delete',
+        'Currency Settings': 'Currency Settings',
+        'Theme Settings': 'Theme Settings',
+        'Language Settings': 'Language Settings',
+        'Light Mode': 'Light Mode',
+        'Dark Mode': 'Dark Mode',
+        'Select Currency': 'Select Currency',
+        'Select Language': 'Select Language',
+        'Save Changes': 'Save Changes',
+        'Expense Tracker': 'Expense Tracker',
+        'Expenses': 'Expenses',
+        'Total': 'Total',
+        'Change Currency': 'Change Currency',
+        'Search & Filter': 'Search & Filter',
+        'Search': 'Search',
+        'All Categories': 'All Categories',
+        'Tag': 'Tag',
+        'Tags': 'Tags',
+        'All Tags': 'All Tags',
+        'From Date': 'From Date',
+        'To Date': 'To Date',
+        'Filter': 'Filter',
+        'Recurring': 'Recurring',
+        'Weekly': 'Weekly',
+        'Monthly': 'Monthly',
+        'Yearly': 'Yearly',
+        'Yes': 'Yes',
+        'Are you sure you want to delete this expense?': 'Are you sure you want to delete this expense?',
+        'No expenses found.': 'No expenses found.',
+        'Add your first expense': 'Add your first expense',
+        'Add New Expense': 'Add New Expense',
+        'Export Data': 'Export Data',
+        'Theme Options': 'Theme Options',
+        'This will change the currency symbol displayed throughout the app.': 'This will change the currency symbol displayed throughout the app.',
+        'Also change language to match currency region': 'Also change language to match currency region',
+        'This will automatically set the language based on the selected currency.': 'This will automatically set the language based on the selected currency.',
+        'Brief description of the expense': 'Brief description of the expense',
+        'Select a category': 'Select a category',
+        'e.g. groceries, dining, work': 'e.g. groceries, dining, work',
+        'Comma-separated tags to categorize your expense': 'Comma-separated tags to categorize your expense',
+        'Recurring Expense': 'Recurring Expense',
+        'How often this expense recurs': 'How often this expense recurs',
+        'Expense added successfully!': 'Expense added successfully!',
+        'Expense not found!': 'Expense not found!',
+        'Expense updated successfully!': 'Expense updated successfully!',
+        'Expense deleted successfully!': 'Expense deleted successfully!'
+    },
+    'hu': {
+        'Food': 'Étel',
+        'Transportation': 'Közlekedés',
+        'Housing': 'Lakhatás',
+        'Utilities': 'Közüzemi díjak',
+        'Entertainment': 'Szórakozás',
+        'Healthcare': 'Egészségügy',
+        'Education': 'Oktatás',
+        'Shopping': 'Vásárlás',
+        'Travel': 'Utazás',
+        'Miscellaneous': 'Egyéb',
+        'Home': 'Főoldal',
+        'Add Expense': 'Költség hozzáadása',
+        'Analytics': 'Elemzések',
+        'Budgets': 'Költségvetések',
+        'Reports': 'Jelentések',
+        'Settings': 'Beállítások',
+        'Description': 'Leírás',
+        'Amount': 'Összeg',
+        'Category': 'Kategória',
+        'Date': 'Dátum',
+        'Actions': 'Műveletek',
+        'Save': 'Mentés',
+        'Cancel': 'Mégsem',
+        'Edit': 'Szerkesztés',
+        'Delete': 'Törlés',
+        'Currency Settings': 'Pénznem beállítások',
+        'Theme Settings': 'Téma beállítások',
+        'Language Settings': 'Nyelvi beállítások',
+        'Light Mode': 'Világos mód',
+        'Dark Mode': 'Sötét mód',
+        'Select Currency': 'Pénznem kiválasztása',
+        'Select Language': 'Nyelv kiválasztása',
+        'Save Changes': 'Változtatások mentése',
+        'Expense Tracker': 'Költségkövető',
+        'Expenses': 'Költségek',
+        'Total': 'Összesen',
+        'Change Currency': 'Pénznem váltása',
+        'Search & Filter': 'Keresés és szűrés',
+        'Search': 'Keresés',
+        'All Categories': 'Minden kategória',
+        'Tag': 'Címke',
+        'Tags': 'Címkék',
+        'All Tags': 'Minden címke',
+        'From Date': 'Kezdő dátum',
+        'To Date': 'Záró dátum',
+        'Filter': 'Szűrés',
+        'Recurring': 'Ismétlődő',
+        'Weekly': 'Heti',
+        'Monthly': 'Havi',
+        'Yearly': 'Éves',
+        'Yes': 'Igen',
+        'Are you sure you want to delete this expense?': 'Biztosan törölni szeretné ezt a költséget?',
+        'No expenses found.': 'Nincsenek költségek.',
+        'Add your first expense': 'Adja hozzá az első költségét',
+        'Add New Expense': 'Új költség hozzáadása',
+        'Export Data': 'Adatok exportálása',
+        'Theme Options': 'Téma beállítások',
+        'This will change the currency symbol displayed throughout the app.': 'Ez megváltoztatja az alkalmazásban megjelenő pénznem szimbólumot.',
+        'Also change language to match currency region': 'Változtassa meg a nyelvet is a pénznem régiójához igazodva',
+        'This will automatically set the language based on the selected currency.': 'Ez automatikusan beállítja a nyelvet a választott pénznem alapján.',
+        'Brief description of the expense': 'A költség rövid leírása',
+        'Select a category': 'Válasszon kategóriát',
+        'e.g. groceries, dining, work': 'pl. élelmiszer, étkezés, munka',
+        'Comma-separated tags to categorize your expense': 'Vesszővel elválasztott címkék a költség kategorizálásához',
+        'Recurring Expense': 'Ismétlődő költség',
+        'How often this expense recurs': 'Milyen gyakran ismétlődik ez a költség',
+        'Expense added successfully!': 'Költség sikeresen hozzáadva!',
+        'Expense not found!': 'Költség nem található!',
+        'Expense updated successfully!': 'Költség sikeresen frissítve!',
+        'Expense deleted successfully!': 'Költség sikeresen törölve!'
+    },
+    'ja': {
+        'Food': '食費',
+        'Transportation': '交通費',
+        'Housing': '住居費',
+        'Utilities': '公共料金',
+        'Entertainment': '娯楽費',
+        'Healthcare': '医療費',
+        'Education': '教育費',
+        'Shopping': '買い物',
+        'Travel': '旅行',
+        'Miscellaneous': 'その他',
+        'Home': 'ホーム',
+        'Add Expense': '支出を追加',
+        'Analytics': '分析',
+        'Budgets': '予算',
+        'Reports': 'レポート',
+        'Settings': '設定',
+        'Description': '説明',
+        'Amount': '金額',
+        'Category': 'カテゴリー',
+        'Date': '日付',
+        'Actions': 'アクション',
+        'Save': '保存',
+        'Cancel': 'キャンセル',
+        'Edit': '編集',
+        'Delete': '削除',
+        'Currency Settings': '通貨設定',
+        'Theme Settings': 'テーマ設定',
+        'Language Settings': '言語設定',
+        'Light Mode': 'ライトモード',
+        'Dark Mode': 'ダークモード',
+        'Select Currency': '通貨を選択',
+        'Select Language': '言語を選択',
+        'Save Changes': '変更を保存',
+        'Expense Tracker': '支出管理',
+        'Expenses': '支出',
+        'Total': '合計',
+        'Change Currency': '通貨を変更',
+        'Search & Filter': '検索とフィルター',
+        'Search': '検索',
+        'All Categories': 'すべてのカテゴリー',
+        'Tag': 'タグ',
+        'Tags': 'タグ',
+        'All Tags': 'すべてのタグ',
+        'From Date': '開始日',
+        'To Date': '終了日',
+        'Filter': 'フィルター',
+        'Recurring': '定期的',
+        'Weekly': '毎週',
+        'Monthly': '毎月',
+        'Yearly': '毎年',
+        'Yes': 'はい',
+        'Are you sure you want to delete this expense?': 'この支出を削除してもよろしいですか？',
+        'No expenses found.': '支出が見つかりません。',
+        'Add your first expense': '最初の支出を追加する',
+        'Add New Expense': '新しい支出を追加',
+        'Export Data': 'データのエクスポート',
+        'Theme Options': 'テーマオプション',
+        'This will change the currency symbol displayed throughout the app.': 'これにより、アプリ全体に表示される通貨記号が変更されます。',
+        'Also change language to match currency region': '通貨地域に合わせて言語も変更する',
+        'This will automatically set the language based on the selected currency.': '選択した通貨に基づいて言語が自動的に設定されます。'
+    }
+}
+
+# Predefined categories (using English as the base)
 EXPENSE_CATEGORIES = [
     'Food', 'Transportation', 'Housing', 'Utilities', 'Entertainment',
     'Healthcare', 'Education', 'Shopping', 'Travel', 'Miscellaneous'
 ]
+
+# Translation function
+def translate(text, language=None):
+    if language is None:
+        language = session.get('language', 'en')
+    
+    # If the language is not supported, fall back to English
+    if language not in TRANSLATIONS:
+        language = 'en'
+    
+    # Look up the translation
+    return TRANSLATIONS[language].get(text, text)
 
 # Database setup with context manager
 @contextmanager
@@ -33,6 +255,32 @@ def get_db_connection():
         yield conn
     finally:
         conn.close()
+
+# Make translations available to all templates
+@app.context_processor
+def utility_processor():
+    def t(text):
+        return translate(text)
+    
+    def get_categories():
+        language = session.get('language', 'en')
+        return [translate(category, language) for category in EXPENSE_CATEGORIES]
+    
+    def original_category(translated_category):
+        """Get the original English category from a translated one"""
+        language = session.get('language', 'en')
+        if language == 'en':
+            return translated_category
+        
+        # Look up the original English category
+        for category in EXPENSE_CATEGORIES:
+            if translate(category, language) == translated_category:
+                return category
+        
+        # If not found, return as is
+        return translated_category
+    
+    return dict(t=t, get_categories=get_categories, original_category=original_category)
 
 def init_db():
     with get_db_connection() as conn:
@@ -197,15 +445,19 @@ def add_expense():
         
         if errors:
             for error in errors:
-                flash(error, 'danger')
+                flash(translate(error), 'danger')
             return render_template('add_expense.html', 
-                                  form_data=request.form, 
-                                  categories=EXPENSE_CATEGORIES)
+                                  form_data=request.form)
         
         # Get form data
         description = request.form['description']
         amount = float(request.form['amount'])
+        
+        # Get the original English category if needed
         category = request.form['category']
+        # This will convert from translated category back to English if needed
+        category = original_category(category)
+        
         date = request.form['date']
         
         # Handle recurring expenses
@@ -243,11 +495,11 @@ def add_expense():
                                (expense_id, tag_id))
             
             conn.commit()
-            flash('Expense added successfully!', 'success')
+            flash(translate('Expense added successfully!'), 'success')
             
         return redirect(url_for('index'))
 
-    return render_template('add_expense.html', categories=EXPENSE_CATEGORIES)
+    return render_template('add_expense.html')
 
 # Edit expense
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -256,7 +508,7 @@ def edit_expense(id):
         expense = conn.execute('SELECT * FROM expenses WHERE id = ?', (id,)).fetchone()
         
         if not expense:
-            flash('Expense not found!', 'danger')
+            flash(translate('Expense not found!'), 'danger')
             return redirect(url_for('index'))
         
         # Get tags for this expense
@@ -275,16 +527,20 @@ def edit_expense(id):
             
             if errors:
                 for error in errors:
-                    flash(error, 'danger')
+                    flash(translate(error), 'danger')
                 return render_template('edit_expense.html', 
                                       expense=expense, 
-                                      tags=','.join(tags),
-                                      categories=EXPENSE_CATEGORIES)
+                                      tags=','.join(tags))
             
             # Get form data
             description = request.form['description']
             amount = float(request.form['amount'])
+            
+            # Get the original English category if needed
             category = request.form['category']
+            # This will convert from translated category back to English if needed
+            category = original_category(category)
+            
             date = request.form['date']
             
             # Handle recurring expenses
@@ -322,13 +578,12 @@ def edit_expense(id):
                            (id, tag_id))
             
             conn.commit()
-            flash('Expense updated successfully!', 'success')
+            flash(translate('Expense updated successfully!'), 'success')
             return redirect(url_for('index'))
         
         return render_template('edit_expense.html', 
                                expense=expense, 
-                               tags=','.join(tags),
-                               categories=EXPENSE_CATEGORIES)
+                               tags=','.join(tags))
 
 # Delete expense
 @app.route('/delete/<int:id>', methods=['POST'])
@@ -337,7 +592,7 @@ def delete_expense(id):
         # Delete expense (foreign key constraints will handle expense_tags)
         conn.execute('DELETE FROM expenses WHERE id = ?', (id,))
         conn.commit()
-        flash('Expense deleted successfully!', 'success')
+        flash(translate('Expense deleted successfully!'), 'success')
     
     return redirect(url_for('index'))
 
@@ -604,12 +859,10 @@ def toggle_theme():
     if requested_theme:
         new_theme = requested_theme
     else:
-        # Toggle between themes: light -> dark -> freaky -> light
+        # Toggle between themes: light -> dark -> light
         current_theme = request.cookies.get('theme', 'light')
         if current_theme == 'light':
             new_theme = 'dark'
-        elif current_theme == 'dark':
-            new_theme = 'freaky'
         else:
             new_theme = 'light'
     
@@ -630,10 +883,14 @@ def settings():
     # Get current theme
     current_theme = request.cookies.get('theme', 'light')
     
+    # Get current language
+    current_language = session.get('language', 'en')
+    
     return render_template('settings.html',
                           currencies=CURRENCIES,
                           current_currency=current_currency,
-                          current_theme=current_theme)
+                          current_theme=current_theme,
+                          current_language=current_language)
 
 # Currency selection
 @app.route('/settings/currency', methods=['GET', 'POST'])
@@ -642,7 +899,13 @@ def set_currency():
         currency = request.form.get('currency', 'USD')
         if currency in CURRENCIES:
             session['currency'] = currency
-            flash(f'Currency changed to {CURRENCIES[currency]["name"]}', 'success')
+            # Automatically set language based on currency if user wants
+            set_language = request.form.get('set_language', 'no')
+            if set_language == 'yes':
+                session['language'] = CURRENCIES[currency]['language']
+                flash(f'Currency changed to {CURRENCIES[currency]["name"]} and language set to {CURRENCIES[currency]["language"]}', 'success')
+            else:
+                flash(f'Currency changed to {CURRENCIES[currency]["name"]}', 'success')
         else:
             flash('Invalid currency selected', 'danger')
         return redirect(url_for('settings'))
@@ -653,6 +916,18 @@ def set_currency():
     return render_template('currency_settings.html', 
                           currencies=CURRENCIES,
                           current_currency=current_currency)
+
+# Language selection
+@app.route('/settings/language', methods=['POST'])
+def set_language():
+    language = request.form.get('language', 'en')
+    # Set the language
+    session['language'] = language
+    flash(f'Language changed to {language}', 'success')
+    
+    # Get the redirect URL or default to settings
+    redirect_url = request.form.get('redirect_url', url_for('settings'))
+    return redirect(redirect_url)
 
 # Expense reports
 @app.route('/reports', methods=['GET'])
