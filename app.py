@@ -172,7 +172,7 @@ def index():
         tags = [t['name'] for t in tag_rows]
     
     # Get current currency (default to USD)
-    currency_code = session.get('currency', 'USD')
+        currency_code = session.get('currency', 'HUF')
     currency = CURRENCIES[currency_code]
     
     return render_template('index.html', 
