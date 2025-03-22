@@ -462,7 +462,7 @@ def analytics():
             })
     
     # Get current currency (default to USD)
-    currency_code = session.get('currency', 'USD')
+    currency_code = session.get('currency', 'HUF')
     currency = CURRENCIES[currency_code]
     
     return render_template('analytics.html',
@@ -532,7 +532,7 @@ def manage_budgets():
         categories = [c['category'] for c in categories] + [c for c in EXPENSE_CATEGORIES if c not in categories]
     
     # Get current currency (default to USD)
-    currency_code = session.get('currency', 'USD')
+    currency_code = session.get('currency', 'HUF')
     currency = CURRENCIES[currency_code]
     
     return render_template('budgets.html', 
@@ -608,10 +608,6 @@ def toggle_theme():
         current_theme = request.cookies.get('theme', 'light')
         if current_theme == 'light':
             new_theme = 'dark'
-        elif current_theme == 'dark':
-            new_theme = 'freaky'
-        else:
-            new_theme = 'light'
     
     # Create response with redirect
     response = make_response(redirect(redirect_url))
@@ -625,7 +621,7 @@ def toggle_theme():
 @app.route('/settings', methods=['GET'])
 def settings():
     # Get current currency
-    current_currency = session.get('currency', 'USD')
+    current_currency = session.get('currency', 'HUF')
     
     # Get current theme
     current_theme = request.cookies.get('theme', 'light')
@@ -639,7 +635,7 @@ def settings():
 @app.route('/settings/currency', methods=['GET', 'POST'])
 def set_currency():
     if request.method == 'POST':
-        currency = request.form.get('currency', 'USD')
+        currency = request.form.get('currency', 'HUF')
         if currency in CURRENCIES:
             session['currency'] = currency
             flash(f'Currency changed to {CURRENCIES[currency]["name"]}', 'success')
@@ -648,7 +644,7 @@ def set_currency():
         return redirect(url_for('settings'))
     
     # Default to USD if not set
-    current_currency = session.get('currency', 'USD')
+    current_currency = session.get('currency', 'HUF')
     
     return render_template('currency_settings.html', 
                           currencies=CURRENCIES,

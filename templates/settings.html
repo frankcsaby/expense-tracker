@@ -61,14 +61,6 @@
                                 <i class="bi bi-moon-fill"></i> Dark Mode
                             </button>
                         </form>
-                        
-                        <form method="POST" action="{{ url_for('toggle_theme') }}">
-                            <input type="hidden" name="redirect_url" value="{{ url_for('settings') }}">
-                            <input type="hidden" name="theme" value="freaky">
-                            <button type="submit" class="btn btn-lg {{ 'btn-danger' if current_theme == 'freaky' else 'btn-outline-danger' }}" style="{{ 'animation: pulse 1s infinite' if current_theme == 'freaky' else '' }}">
-                                <i class="bi bi-emoji-dizzy-fill"></i> Freaky Mode
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
