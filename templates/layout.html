@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ 'dark' if request.cookies.get('theme') == 'freaky' else request.cookies.get('theme', 'light') }}" class="{{ 'freaky-mode' if request.cookies.get('theme') == 'freaky' else '' }}">
+<html lang="en" data-bs-theme="{{ request.cookies.get('theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker</title>
+    <title>{% block title %}Expense Tracker{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -14,6 +14,23 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Mobile Detection Script -->
+    <script>
+        // Detect mobile devices and add appropriate class to HTML element
+        (function() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.matchMedia("(max-width: 767px)").matches;
+            if (isMobile) {
+                document.documentElement.classList.add('is-mobile');
+                // Add meta tag to prevent iOS auto-zoom on inputs
+                const metaTag = document.createElement('meta');
+                metaTag.name = 'viewport';
+                metaTag.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                document.head.appendChild(metaTag);
+            }
+        })();
+    </script>
+    
     <style>
         /* Dark mode specific styles */
         [data-bs-theme="dark"] {
@@ -45,85 +62,120 @@
             color: #f8f9fa;
         }
         
-        /* Basic animations for freaky mode */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        /* Add theme toggle animation */
+        .theme-toggle {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            overflow: hidden;
         }
         
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(0);
+            transition: transform 0.3s ease;
         }
         
-        .freaky-mode .bi-cash-coin {
-            display: inline-block;
-            animation: spin 3s linear infinite;
+        .theme-toggle:hover::before {
+            transform: scale(1);
         }
         
-        .freaky-mode .btn-primary {
-            background: linear-gradient(45deg, #ff00cc, #3333ff);
-            border: none;
+        .theme-toggle i {
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+        
+        .theme-toggle:active i {
+            transform: scale(0.8);
         }
     </style>
 </head>
 <body>
-    <header class="bg-dark text-white py-3 shadow">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">
-                    <i class="bi bi-cash-coin me-2"></i> Expense Tracker
-                </h1>
-                <nav>
-                    <ul class="nav">
+    <header class="bg-dark text-white shadow sticky-top">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-lg navbar-dark p-0">
+                <a class="navbar-brand py-2" href="{{ url_for('index') }}">
+                    <i class="bi bi-cash-coin me-1"></i> Expense Tracker
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a href="{{ url_for('index') }}" class="nav-link text-white">
-                                <i class="bi bi-house"></i> Home
+                            <a href="{{ url_for('index') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Home">
+                                <i class="bi bi-house"></i> <span class="d-lg-none ms-2">Home</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('add_expense') }}" class="nav-link text-white">
-                                <i class="bi bi-plus-circle"></i> Add Expense
+                            <a href="{{ url_for('add_expense') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Add Expense">
+                                <i class="bi bi-plus-circle"></i> <span class="d-lg-none ms-2">Add Expense</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('analytics') }}" class="nav-link text-white">
-                                <i class="bi bi-graph-up"></i> Analytics
+                            <a href="{{ url_for('income') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Income">
+                                <i class="bi bi-cash-stack"></i> <span class="d-lg-none ms-2">Income</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('manage_budgets') }}" class="nav-link text-white">
-                                <i class="bi bi-wallet2"></i> Budgets
+                            <a href="{{ url_for('savings_goals') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Savings">
+                                <i class="bi bi-piggy-bank"></i> <span class="d-lg-none ms-2">Savings</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('reports') }}" class="nav-link text-white">
-                                <i class="bi bi-file-earmark-text"></i> Reports
+                            <a href="{{ url_for('forecasts') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Spending Predictor">
+                                <i class="bi bi-graph-up-arrow"></i> <span class="d-lg-none ms-2">Predictor</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('settings') }}" class="nav-link text-white">
-                                <i class="bi bi-gear"></i> Settings
+                            <a href="{{ url_for('analytics') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Analytics">
+                                <i class="bi bi-graph-up"></i> <span class="d-lg-none ms-2">Analytics</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <form method="POST" action="{{ url_for('toggle_theme') }}" class="d-inline">
+                            <a href="{{ url_for('manage_budgets') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Budgets">
+                                <i class="bi bi-wallet2"></i> <span class="d-lg-none ms-2">Budgets</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('reports') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Reports">
+                                <i class="bi bi-file-earmark-text"></i> <span class="d-lg-none ms-2">Reports</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item d-none d-sm-block">
+                            <span class="nav-link">
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-cash"></i> {{ g.currency_code }}
+                                </span>
+                            </span>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <form method="POST" action="{{ url_for('toggle_theme') }}" class="mx-auto">
                                 <input type="hidden" name="redirect_url" value="{{ request.url }}">
-                                <button type="submit" class="nav-link text-white bg-transparent border-0">
-                                    {% if request.cookies.get('theme') == 'dark' %}
-                                    <i class="bi bi-sun-fill"></i>
-                                    {% elif request.cookies.get('theme') == 'freaky' %}
-                                    <i class="bi bi-emoji-neutral-fill"></i>
-                                    {% else %}
-                                    <i class="bi bi-moon-fill"></i>
-                                    {% endif %}
+                                <button type="submit" class="nav-link theme-toggle bg-transparent border-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle {% if request.cookies.get('theme') == 'dark' %}Light{% else %}Dark{% endif %} Mode">
+                                    <i class="bi bi-{% if request.cookies.get('theme') == 'dark' %}sun{% else %}moon{% endif %}-fill"></i>
                                 </button>
                             </form>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('settings') }}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Settings">
+                                <i class="bi bi-gear"></i> <span class="d-lg-none ms-2">Settings</span>
+                            </a>
+                        </li>
                     </ul>
-                </nav>
-            </div>
+                </div>
+            </nav>
         </div>
     </header>
 
@@ -140,6 +192,13 @@
             {% endif %}
         {% endwith %}
 
+        <!-- Current currency indicator (moved to navbar on desktop, only show here on mobile) -->
+        <div class="d-sm-none text-end mb-3">
+            <span class="badge bg-secondary">
+                <i class="bi bi-cash"></i> Current Currency: {{ g.currency.name }} ({{ g.currency.symbol }})
+            </span>
+        </div>
+
         {% block content %}{% endblock %}
     </main>
 
@@ -154,15 +213,60 @@
     
     <!-- Dark mode Chart.js configuration -->
     <script>
-        // Configure Chart.js for dark mode support
+        // Configure Chart.js for dark mode support and set up navigation
         document.addEventListener('DOMContentLoaded', function() {
             const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            const isMobile = document.documentElement.classList.contains('is-mobile');
             
             // Set Chart.js defaults based on theme
             if (isDarkMode) {
                 Chart.defaults.color = '#f8f9fa';
                 Chart.defaults.borderColor = '#444';
                 Chart.defaults.scale.grid.color = '#444';
+            }
+            
+            // Initialize tooltips - only on desktop
+            if (!isMobile) {
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl, {
+                    trigger: 'hover'
+                }));
+            }
+            
+            // Highlight active navigation item
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+            
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || 
+                    (currentPath.includes(href) && href !== '/')) {
+                    link.classList.add('active');
+                } else if (href === '/' && currentPath === '/') {
+                    link.classList.add('active');
+                }
+            });
+            
+            // If on mobile, adjust UI for better touch interaction
+            if (isMobile) {
+                // Add extra padding to buttons for better touch targets
+                document.querySelectorAll('.btn:not(.navbar-toggler):not(.theme-toggle)').forEach(btn => {
+                    btn.classList.add('my-1');
+                    
+                    // Ensure delete confirmation is easier on mobile
+                    if (btn.onclick && btn.onclick.toString().includes('confirm')) {
+                        const originalOnClick = btn.onclick;
+                        btn.onclick = function(e) {
+                            // Use larger touch-friendly confirm dialog
+                            e.preventDefault();
+                            if (window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+                                btn.setAttribute('disabled', 'disabled');
+                                btn.form.submit();
+                            }
+                            return false;
+                        };
+                    }
+                });
             }
         });
     </script>

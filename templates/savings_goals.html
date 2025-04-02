@@ -1,0 +1,314 @@
+{% extends "layout.html" %}
+
+{% block title %}Savings Goals{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-piggy-bank me-2"></i> Savings Goals</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newGoalModal">
+            <i class="bi bi-plus-circle me-1"></i> New Goal
+        </button>
+    </div>
+
+    <div class="row">
+        {% for goal in goals %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 {% if goal.status == 'completed' %}border-success{% elif goal.status == 'inactive' %}border-secondary{% else %}border-primary{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ goal.name }}</h5>
+                    <span class="badge {% if goal.status == 'completed' %}bg-success{% elif goal.status == 'inactive' %}bg-secondary{% else %}bg-primary{% endif %}">
+                        {{ goal.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {% set progress = (goal.current_amount / goal.target_amount * 100)|round|int if goal.target_amount > 0 else 0 %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Progress</span>
+                            <span>{{ progress }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar {% if goal.status == 'completed' %}bg-success{% elif goal.status == 'inactive' %}bg-secondary{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ progress }}%" 
+                                aria-valuenow="{{ progress }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <p><strong>Target:</strong> {{ g.currency.symbol }}{{ goal.target_amount|round(2) }}</p>
+                    <p><strong>Current:</strong> {{ g.currency.symbol }}{{ goal.current_amount|round(2) }}</p>
+                    {% if goal.target_date %}
+                    <p><strong>Target Date:</strong> {{ goal.target_date }}</p>
+                    {% endif %}
+                    {% if goal.description %}
+                    <p class="mb-0"><strong>Description:</strong> {{ goal.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateGoalModal" 
+                            data-id="{{ goal.id }}" 
+                            data-current="{{ goal.current_amount }}" 
+                            data-status="{{ goal.status }}">
+                        <i class="bi bi-plus-circle me-1"></i> Add Progress
+                    </button>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editGoalModal"
+                                data-id="{{ goal.id }}"
+                                data-name="{{ goal.name }}"
+                                data-target="{{ goal.target_amount }}"
+                                data-current="{{ goal.current_amount }}"
+                                data-target-date="{{ goal.target_date }}"
+                                data-description="{{ goal.description }}"
+                                data-status="{{ goal.status }}">
+                            <i class="bi bi-pencil me-1"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteGoalModal" data-id="{{ goal.id }}">
+                            <i class="bi bi-trash me-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not goals %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <h5>No savings goals yet</h5>
+                    <p>Create your first savings goal to start tracking your progress</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newGoalModal">
+                        <i class="bi bi-plus-circle me-1"></i> Create Goal
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Expenses
+        </a>
+    </div>
+</div>
+
+<!-- Update Goal Progress Modal -->
+<div class="modal fade" id="updateGoalModal" tabindex="-1" aria-labelledby="updateGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateGoalModalLabel">Update Savings Progress</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('update_savings_goal', id=0) }}" method="POST" id="updateGoalForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="current_amount" class="form-label">Current Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="current_amount" name="current_amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Goal Modal -->
+<div class="modal fade" id="editGoalModal" tabindex="-1" aria-labelledby="editGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editGoalModalLabel">Edit Savings Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('edit_savings_goal', id=0) }}" method="POST" id="editGoalForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Goal Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_target_amount" class="form-label">Target Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="edit_target_amount" name="target_amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_current_amount" class="form-label">Current Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="edit_current_amount" name="current_amount">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_target_date" class="form-label">Target Date</label>
+                        <input type="date" class="form-control" id="edit_target_date" name="target_date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_status" class="form-label">Status</label>
+                        <select class="form-select" id="edit_status" name="status">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- New Goal Modal -->
+<div class="modal fade" id="newGoalModal" tabindex="-1" aria-labelledby="newGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newGoalModalLabel">Create New Savings Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_savings_goal') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Goal Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="target_amount" class="form-label">Target Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="target_amount" name="target_amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="current_amount" class="form-label">Current Amount (if already saving)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="current_amount" name="current_amount" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="target_date" class="form-label">Target Date (optional)</label>
+                        <input type="date" class="form-control" id="target_date" name="target_date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Goal Modal -->
+<div class="modal fade" id="deleteGoalModal" tabindex="-1" aria-labelledby="deleteGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteGoalModalLabel">Delete Savings Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this savings goal? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_savings_goal', id=0) }}" method="POST" id="deleteGoalForm">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update Goal Progress Modal
+        const updateGoalModal = document.getElementById('updateGoalModal');
+        if (updateGoalModal) {
+            updateGoalModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const goalId = button.getAttribute('data-id');
+                const currentAmount = button.getAttribute('data-current');
+                const status = button.getAttribute('data-status');
+                
+                const form = document.getElementById('updateGoalForm');
+                form.action = form.action.replace('/0', '/' + goalId);
+                
+                document.getElementById('current_amount').value = currentAmount;
+                document.getElementById('status').value = status;
+            });
+        }
+        
+        // Edit Goal Modal
+        const editGoalModal = document.getElementById('editGoalModal');
+        if (editGoalModal) {
+            editGoalModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const goalId = button.getAttribute('data-id');
+                const name = button.getAttribute('data-name');
+                const targetAmount = button.getAttribute('data-target');
+                const currentAmount = button.getAttribute('data-current');
+                const targetDate = button.getAttribute('data-target-date');
+                const description = button.getAttribute('data-description');
+                const status = button.getAttribute('data-status');
+                
+                const form = document.getElementById('editGoalForm');
+                form.action = form.action.replace('/0', '/' + goalId);
+                
+                document.getElementById('edit_name').value = name;
+                document.getElementById('edit_target_amount').value = targetAmount;
+                document.getElementById('edit_current_amount').value = currentAmount;
+                document.getElementById('edit_target_date').value = targetDate;
+                document.getElementById('edit_description').value = description;
+                document.getElementById('edit_status').value = status;
+            });
+        }
+        
+        // Delete Goal Modal
+        const deleteGoalModal = document.getElementById('deleteGoalModal');
+        if (deleteGoalModal) {
+            deleteGoalModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const goalId = button.getAttribute('data-id');
+                
+                const form = document.getElementById('deleteGoalForm');
+                form.action = form.action.replace('/0', '/' + goalId);
+            });
+        }
+    });
+</script>
+{% endblock %} 

@@ -199,21 +199,20 @@ footer {
     color: #f8f9fa;
 }
 
-/* Fix dropdown button width */
 .form-select {
-    min-width: 150px; /* Ensure minimum width for dropdown buttons */
-    padding: 0.5rem 0.75rem;
-    height: auto;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    color: #212529;
 }
 
-/* Specifically fix analytics page selects */
 .col-md-6 .form-select {
-    min-width: 150px;
-    width: auto;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
 }
 
 [data-bs-theme="dark"] .card {
-    background-color: #333;
+    background-color: #2d3238;
     border-color: #444;
 }
 
@@ -222,23 +221,23 @@ footer {
 }
 
 [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
-    color: #e9ecef;
+    color: #f1f1f1;
     background-color: rgba(255, 255, 255, 0.05);
 }
 
 [data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
-    background-color: rgba(255, 255, 255, 0.075);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 [data-bs-theme="dark"] .form-control,
 [data-bs-theme="dark"] .form-select {
-    background-color: #333;
-    border-color: #555;
-    color: #f8f9fa;
+    background-color: #2d3238;
+    border-color: #444;
+    color: #f1f1f1;
 }
 
 [data-bs-theme="dark"] select.form-select {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f8f9fa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f1f1f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
 }
 
 [data-bs-theme="dark"] .form-text {
@@ -246,171 +245,491 @@ footer {
 }
 
 [data-bs-theme="dark"] .badge.bg-secondary {
-    background-color: #495057 !important;
+    background-color: #555 !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-info {
-    background-color: #0d6efd !important;
+    background-color: #0c7d9e !important;
     color: white !important;
 }
 
 [data-bs-theme="dark"] .bg-light {
-    background-color: #333 !important;
+    background-color: #343a40 !important;
 }
 
 [data-bs-theme="dark"] footer {
-    background-color: #333 !important;
-    color: #adb5bd !important;
-    border-color: #444;
+    border-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Progress bar dark mode */
 [data-bs-theme="dark"] .progress {
     background-color: #444;
 }
 
-/* Card header dark mode */
 [data-bs-theme="dark"] .card-header {
-    background-color: #2c2c2c;
-    border-bottom-color: #444;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Alert styling for dark mode */
 [data-bs-theme="dark"] .alert-info {
-    background-color: #0d3663;
-    border-color: #084298;
-    color: #cfe2ff;
+    background-color: rgba(23, 162, 184, 0.2);
+    color: #a8ddeb;
+    border-color: rgba(23, 162, 184, 0.3);
 }
 
 [data-bs-theme="dark"] .alert-success {
-    background-color: #0f5132;
-    border-color: #146c43;
-    color: #d1e7dd;
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #a3e4b8;
+    border-color: rgba(40, 167, 69, 0.3);
 }
 
 [data-bs-theme="dark"] .alert-danger {
-    background-color: #701a29;
-    border-color: #b02a37;
-    color: #f8d7da;
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #f1aeb6;
+    border-color: rgba(220, 53, 69, 0.3);
 }
 
-/* Freaky Mode Styles */
-@keyframes rainbow-text {
-    0% { color: #ff0000; }
-    14% { color: #ff7f00; }
-    28% { color: #ffff00; }
-    42% { color: #00ff00; }
-    57% { color: #0000ff; }
-    71% { color: #4b0082; }
-    85% { color: #9400d3; }
-    100% { color: #ff0000; }
+/* Add custom navbar styling */
+.navbar-dark {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes rainbow-bg {
-    0% { background-color: rgba(255, 0, 0, 0.1); }
-    14% { background-color: rgba(255, 127, 0, 0.1); }
-    28% { background-color: rgba(255, 255, 0, 0.1); }
-    42% { background-color: rgba(0, 255, 0, 0.1); }
-    57% { background-color: rgba(0, 0, 255, 0.1); }
-    71% { background-color: rgba(75, 0, 130, 0.1); }
-    85% { background-color: rgba(148, 0, 211, 0.1); }
-    100% { background-color: rgba(255, 0, 0, 0.1); }
+.navbar-brand {
+    font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
-@keyframes shake {
-    0% { transform: rotate(0deg); }
-    25% { transform: rotate(1deg); }
-    50% { transform: rotate(0deg); }
-    75% { transform: rotate(-1deg); }
-    100% { transform: rotate(0deg); }
+/* Make navbar items more compact on desktop */
+@media (min-width: 992px) {
+    .navbar .nav-item {
+        padding: 0 0.2rem;
+    }
+    
+    .navbar .nav-link {
+        font-size: 1.1rem;
+        padding: 0.75rem 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .navbar .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    /* Highlight active page in the navbar */
+    .navbar .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-bottom: 2px solid var(--primary-color);
+    }
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+/* Improve navbar on mobile */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1rem;
+    }
+    
+    .navbar-nav .nav-item:not(:last-child) .nav-link {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
 }
 
-@keyframes wobble {
-    0% { transform: translateX(0); }
-    15% { transform: translateX(-5px) rotate(-5deg); }
-    30% { transform: translateX(4px) rotate(3deg); }
-    45% { transform: translateX(-3px) rotate(-3deg); }
-    60% { transform: translateX(2px) rotate(2deg); }
-    75% { transform: translateX(-1px) rotate(-1deg); }
-    100% { transform: translateX(0); }
+/* Make the currency badge more attractive */
+.navbar .badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 20px;
 }
 
-html.freaky-mode {
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16"><path fill="%23ff0066" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5zm-3 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm7.5-1.5c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.948 5 10.5 5s1 .672 1 1.5z"/></svg>'), auto;
+/* Add smooth transitions for theme toggle */
+[data-bs-theme] {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.freaky-mode body {
-    background-image: linear-gradient(to right, rgba(255,0,0,0.05), rgba(0,0,255,0.05));
-    animation: rainbow-bg 20s linear infinite;
+/* Highlight the current page in the navigation */
+.navbar .nav-item .nav-link.active {
+    font-weight: 500;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-.freaky-mode h1, .freaky-mode h2, .freaky-mode h3, .freaky-mode h4, .freaky-mode h5 {
-    animation: rainbow-text 5s linear infinite;
-    font-family: 'Comic Sans MS', cursive, sans-serif;
+/* Make tooltips more visible */
+.tooltip .tooltip-inner {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
 }
 
-.freaky-mode .card {
-    animation: shake 5s infinite;
-    transform-origin: center;
-    border-width: 3px;
-    border-style: dashed;
-    border-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) 1;
-    overflow: visible;
+/* Add styles for the sticky header */
+.sticky-top {
+    z-index: 1030;
+    backdrop-filter: blur(10px);
 }
 
-.freaky-mode .btn {
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    transition: all 0.3s;
+/* Responsive Table Improvements */
+@media (max-width: 767px) {
+    .table-responsive {
+        border: 0;
+        background-color: transparent;
+        box-shadow: none !important;
+    }
+    
+    .table-responsive .table {
+        background-color: transparent;
+    }
+    
+    .table-responsive .table td {
+        padding: 0.75rem;
+    }
+    
+    .table-responsive .table td:first-child {
+        border-top-left-radius: 0.375rem;
+        border-top-right-radius: 0.375rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .table-responsive .table td:last-child {
+        border-bottom-left-radius: 0.375rem;
+        border-bottom-right-radius: 0.375rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(0, 0, 0, 0.02);
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .table-responsive tbody tr {
+        display: block;
+        background-color: #fff;
+        border-radius: 0.375rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1rem;
+    }
+    
+    [data-bs-theme="dark"] .table-responsive tbody tr {
+        background-color: var(--bs-body-bg);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .table-responsive thead {
+        display: none;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.9rem;
+        touch-action: manipulation;
+    }
+    
+    /* Better touch targets */
+    .form-control, .form-select, .btn {
+        min-height: 2.5rem;
+    }
+    
+    /* Make progress bars responsive on mobile */
+    .category-progress {
+        width: 100%;
+        max-width: 120px;
+    }
 }
 
-.freaky-mode .btn:hover {
-    animation: wobble 0.8s ease-in-out;
-    transform: scale(1.1);
+/* Mobile-friendly Form Elements */
+@media (max-width: 576px) {
+    .form-control, .form-select {
+        font-size: 16px; /* Prevent iOS auto-zoom */
+    }
+    
+    .form-label {
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Fix filter collapse animation */
+    #filterCollapse {
+        transition: height 0.35s ease;
+    }
+    
+    /* Ensure buttons have enough space */
+    .btn {
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Mobile badge styling */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+        white-space: normal;
+        text-align: left;
+        display: inline-block;
+        margin-bottom: 0.2rem;
+    }
 }
 
-.freaky-mode .table {
-    border-collapse: separate;
-    border-spacing: 4px;
+/* Mobile Detection Helper */
+html.is-mobile .desktop-only {
+    display: none !important;
 }
 
-.freaky-mode .table th {
-    background: linear-gradient(to right, #ff8a00, #e52e71);
-    color: white;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+html:not(.is-mobile) .mobile-only {
+    display: none !important;
 }
 
-.freaky-mode .table td {
-    border-radius: 5px;
-}
-
-.freaky-mode .table tr:nth-child(odd) td {
-    background-color: rgba(255, 105, 180, 0.1);
-}
-
-.freaky-mode .table tr:nth-child(even) td {
-    background-color: rgba(123, 104, 238, 0.1);
-}
-
-.freaky-mode .progress {
-    height: 25px !important;
-    border-radius: 10px;
+/* Add the category-progress class to properly style the progress bars */
+.category-progress {
+    height: 8px !important;
+    width: 100px;
+    border-radius: 4px;
     overflow: hidden;
-    border: 2px solid #ff00ff;
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
-.freaky-mode .progress-bar {
-    background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
-    background-size: 1rem 1rem;
-    animation: pulse 1s infinite;
+.category-progress .progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
 }
 
-.freaky-mode .nav-link {
-    font-weight: bold;
-    text-shadow: 0 0 5px rgba(255,255,255,0.7);
+[data-bs-theme="dark"] .category-progress {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Expense Card Layout */
+.expenses-container {
+    margin-bottom: 1.5rem;
+}
+
+.expense-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.expense-card {
+    background-color: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.expense-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.expense-card-body {
+    padding: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.expense-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.expense-description {
+    font-weight: 500;
+    font-size: 1.1rem;
+    color: var(--dark-color);
+    flex: 1;
+    padding-right: 1rem;
+    word-break: break-word;
+}
+
+.expense-amount {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    white-space: nowrap;
+}
+
+.expense-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.75rem;
+}
+
+.expense-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.expense-date {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+}
+
+.expense-category {
+    margin-right: 0.5rem;
+}
+
+.expense-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.expense-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.expense-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+    flex-wrap: wrap;
+}
+
+.expense-actions .btn {
+    flex: 1;
+    min-width: max-content;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dark mode support for expense cards */
+[data-bs-theme="dark"] .expense-card {
+    background-color: #2d3238;
+    border-color: #444;
+}
+
+[data-bs-theme="dark"] .expense-header {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .expense-description {
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .expense-date {
+    color: #adb5bd;
+}
+
+/* Responsive adjustments for expense cards */
+@media (min-width: 576px) {
+    .expense-actions .btn {
+        padding: 0.4rem 0.75rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .expense-card {
+        margin-bottom: 0; /* Handled by flex gap now */
+    }
+    
+    .expense-actions {
+        flex-direction: row;
+    }
+    
+    .expense-actions .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+}
+
+/* Budget Card Styling */
+.budget-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: var(--border-radius);
+}
+
+.budget-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.budget-progress {
+    height: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.budget-progress .progress-bar {
+    font-weight: 500;
+    font-size: 0.85rem;
+    line-height: 24px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.budget-amount {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+.budget-total {
+    font-size: 0.9rem;
+}
+
+.budget-warning {
+    font-size: 0.85rem;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .budget-amount {
+    color: #f8f9fa;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    .budget-cards {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .budget-card {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    [data-bs-theme="dark"] .budget-card {
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+    
+    .budget-progress {
+        height: 18px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .budget-progress .progress-bar {
+        font-size: 0.75rem;
+        line-height: 18px;
+    }
+}
+
+/* Theme toggle positioning */
+.navbar-nav .nav-item form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.theme-toggle {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto;
 }

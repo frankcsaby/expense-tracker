@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, g
 import sqlite3
 from datetime import datetime, timedelta
 from functools import wraps
@@ -24,6 +24,21 @@ EXPENSE_CATEGORIES = [
     'Healthcare', 'Education', 'Shopping', 'Travel', 'Miscellaneous'
 ]
 
+# Before request handler to setup currency
+@app.before_request
+def before_request():
+    # Set default currency if not already set
+    if 'currency' not in session:
+        session['currency'] = 'HUF'
+    
+    # Ensure currency exists in our CURRENCIES dict
+    if session.get('currency') not in CURRENCIES:
+        session['currency'] = 'HUF'
+    
+    # Make currency info available globally
+    g.currency_code = session.get('currency')
+    g.currency = CURRENCIES[g.currency_code]
+
 # Database setup with context manager
 @contextmanager
 def get_db_connection():
@@ -35,6 +50,7 @@ def get_db_connection():
         conn.close()
 
 def init_db():
+    """Initialize the database with tables if they don't exist."""
     with get_db_connection() as conn:
         # Create expenses table
         conn.execute('''
@@ -42,8 +58,9 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 description TEXT NOT NULL,
                 amount REAL NOT NULL,
-                category TEXT NOT NULL,
+                category TEXT,
                 date TEXT NOT NULL,
+                tags TEXT,
                 recurring INTEGER DEFAULT 0,
                 recurring_interval TEXT
             )
@@ -53,30 +70,83 @@ def init_db():
         conn.execute('''
             CREATE TABLE IF NOT EXISTS budgets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                category TEXT NOT NULL UNIQUE,
+                category TEXT NOT NULL,
                 amount REAL NOT NULL,
-                period TEXT NOT NULL
+                period TEXT NOT NULL,
+                start_date TEXT NOT NULL,
+                end_date TEXT,
+                notification_threshold REAL
             )
         ''')
         
-        # Create tags table
+        # Create settings table if it doesn't exist
         conn.execute('''
-            CREATE TABLE IF NOT EXISTS tags (
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        ''')
+        
+        # Create savings_goals table
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS savings_goals (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE
+                name TEXT NOT NULL,
+                target_amount REAL NOT NULL,
+                current_amount REAL DEFAULT 0,
+                start_date TEXT DEFAULT CURRENT_DATE,
+                target_date TEXT,
+                description TEXT,
+                status TEXT DEFAULT 'active'
             )
         ''')
         
-        # Create expense_tags table (for many-to-many relationship)
+        # Create predictions table (replacing forecasts)
         conn.execute('''
-            CREATE TABLE IF NOT EXISTS expense_tags (
-                expense_id INTEGER,
-                tag_id INTEGER,
-                PRIMARY KEY (expense_id, tag_id),
-                FOREIGN KEY (expense_id) REFERENCES expenses (id) ON DELETE CASCADE,
-                FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
+            CREATE TABLE IF NOT EXISTS predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                target_month TEXT NOT NULL,
+                predicted_amount REAL NOT NULL,
+                actual_amount REAL,
+                prediction_date TEXT DEFAULT CURRENT_DATE,
+                accuracy REAL,
+                notes TEXT
             )
         ''')
+        
+        # Create prediction_categories table for category breakdown
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS prediction_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                prediction_id INTEGER,
+                category TEXT NOT NULL,
+                predicted_amount REAL NOT NULL,
+                actual_amount REAL,
+                FOREIGN KEY (prediction_id) REFERENCES predictions (id)
+            )
+        ''')
+        
+        # Create income_entries table
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS income_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                description TEXT,
+                recurring INTEGER DEFAULT 0,
+                recurring_interval TEXT
+            )
+        ''')
+        
+        # Set default settings if not exist
+        conn.execute('''
+            INSERT OR IGNORE INTO settings (key, value)
+            VALUES ('currency', 'HUF')
+        ''')
+        
+        # Drop the forecasts table if it exists
+        conn.execute('DROP TABLE IF EXISTS forecasts')
         
         conn.commit()
 
@@ -600,14 +670,13 @@ def toggle_theme():
     # Get the requested theme
     requested_theme = request.form.get('theme')
     
-    # If a specific theme is requested, use it; otherwise cycle through themes
+    # If a specific theme is requested, use it; otherwise toggle between light and dark
     if requested_theme:
         new_theme = requested_theme
     else:
-        # Toggle between themes: light -> dark -> freaky -> light
+        # Toggle between themes: light -> dark -> light
         current_theme = request.cookies.get('theme', 'light')
-        if current_theme == 'light':
-            new_theme = 'dark'
+        new_theme = 'dark' if current_theme == 'light' else 'light'
     
     # Create response with redirect
     response = make_response(redirect(redirect_url))
@@ -722,19 +791,390 @@ def reports():
             WHERE 1=1 {date_filter}
         ''', query_params).fetchone()
     
-    # Get current currency
-    currency_code = session.get('currency', 'USD')
-    currency = CURRENCIES[currency_code]
-    
     return render_template('reports.html',
                           report_data=report_data,
                           summary=summary,
                           report_type=report_type,
                           from_date=from_date,
                           to_date=to_date,
-                          grouping=grouping,
-                          currency=currency,
-                          currency_code=currency_code)
+                          grouping=grouping)
+
+# Savings Goals
+@app.route('/savings-goals', methods=['GET'])
+def savings_goals():
+    with get_db_connection() as conn:
+        goals = conn.execute('''
+            SELECT * FROM savings_goals
+            ORDER BY status, target_date
+        ''').fetchall()
+    
+    return render_template('savings_goals.html',
+                          goals=goals)
+
+@app.route('/savings-goals/add', methods=['POST'])
+def add_savings_goal():
+    name = request.form.get('name')
+    target_amount = float(request.form.get('target_amount', 0))
+    current_amount = float(request.form.get('current_amount', 0))
+    start_date = request.form.get('start_date', datetime.today().strftime('%Y-%m-%d'))
+    target_date = request.form.get('target_date')
+    description = request.form.get('description', '')
+    
+    # Validate inputs
+    if not name or target_amount <= 0:
+        flash('Please provide a name and a valid target amount', 'danger')
+        return redirect(url_for('savings_goals'))
+    
+    with get_db_connection() as conn:
+        conn.execute('''
+            INSERT INTO savings_goals 
+            (name, target_amount, current_amount, start_date, target_date, description)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (name, target_amount, current_amount, start_date, target_date, description))
+        conn.commit()
+    
+    flash('Savings goal added successfully!', 'success')
+    return redirect(url_for('savings_goals'))
+
+@app.route('/savings-goals/update/<int:id>', methods=['POST'])
+def update_savings_goal(id):
+    current_amount = float(request.form.get('current_amount', 0))
+    status = request.form.get('status')
+    
+    with get_db_connection() as conn:
+        goal = conn.execute('SELECT * FROM savings_goals WHERE id = ?', (id,)).fetchone()
+        
+        if not goal:
+            flash('Savings goal not found!', 'danger')
+            return redirect(url_for('savings_goals'))
+        
+        conn.execute('''
+            UPDATE savings_goals
+            SET current_amount = ?, status = ?
+            WHERE id = ?
+        ''', (current_amount, status, id))
+        conn.commit()
+    
+    flash('Savings goal updated successfully!', 'success')
+    return redirect(url_for('savings_goals'))
+
+@app.route('/savings-goals/edit/<int:id>', methods=['POST'])
+def edit_savings_goal(id):
+    name = request.form.get('name')
+    target_amount = float(request.form.get('target_amount', 0))
+    current_amount = float(request.form.get('current_amount', 0))
+    target_date = request.form.get('target_date')
+    description = request.form.get('description', '')
+    status = request.form.get('status')
+    
+    # Validate inputs
+    if not name or target_amount <= 0:
+        flash('Please provide a name and a valid target amount', 'danger')
+        return redirect(url_for('savings_goals'))
+    
+    with get_db_connection() as conn:
+        conn.execute('''
+            UPDATE savings_goals
+            SET name = ?, target_amount = ?, current_amount = ?, 
+                target_date = ?, description = ?, status = ?
+            WHERE id = ?
+        ''', (name, target_amount, current_amount, target_date, description, status, id))
+        conn.commit()
+    
+    flash('Savings goal updated successfully!', 'success')
+    return redirect(url_for('savings_goals'))
+
+@app.route('/savings-goals/delete/<int:id>', methods=['POST'])
+def delete_savings_goal(id):
+    with get_db_connection() as conn:
+        conn.execute('DELETE FROM savings_goals WHERE id = ?', (id,))
+        conn.commit()
+    
+    flash('Savings goal deleted successfully!', 'success')
+    return redirect(url_for('savings_goals'))
+
+# Spending Prediction
+@app.route('/forecasts', methods=['GET'])
+def forecasts():
+    # Get month filter from request, default to current month
+    current_date = datetime.today()
+    default_month = current_date.strftime('%Y-%m')
+    month_filter = request.args.get('month', default_month)
+    category_filter = request.args.get('category', '')
+    
+    try:
+        # Parse year and month from filter
+        year, month = map(int, month_filter.split('-'))
+        # Get the current year-month
+        current_year = current_date.year
+        current_month = current_date.month
+        
+        # Calculate the previous 6 months for historical data analysis
+        months_data = []
+        for i in range(6):
+            prev_month = month - i - 1
+            prev_year = year
+            
+            if prev_month <= 0:
+                prev_month += 12
+                prev_year -= 1
+                
+            # Skip future months
+            if (prev_year > current_year) or (prev_year == current_year and prev_month > current_month):
+                continue
+                
+            months_data.append({'year': prev_year, 'month': prev_month})
+    except ValueError:
+        # If invalid month format, default to current month
+        year, month = current_date.year, current_date.month
+        month_filter = default_month
+        months_data = []
+        for i in range(6):
+            prev_month = current_month - i - 1
+            prev_year = current_year
+            
+            if prev_month <= 0:
+                prev_month += 12
+                prev_year -= 1
+                
+            months_data.append({'year': prev_year, 'month': prev_month})
+    
+    with get_db_connection() as conn:
+        # Get categories for filter
+        categories = conn.execute('SELECT DISTINCT category FROM expenses WHERE category IS NOT NULL').fetchall()
+        categories = [c['category'] for c in categories if c['category']] + [c for c in EXPENSE_CATEGORIES if c not in [c['category'] for c in categories if c['category']]]
+        
+        # Historical data analysis
+        historical_data = []
+        month_totals = []
+        
+        base_query = '''
+            SELECT category, SUM(amount) as total
+            FROM expenses
+            WHERE strftime('%Y', date) = ? AND strftime('%m', date) = ?
+        '''
+        
+        if category_filter:
+            base_query += ' AND category = ?'
+        
+        base_query += ' GROUP BY category ORDER BY total DESC'
+        
+        for month_data in months_data:
+            year_str = str(month_data['year'])
+            # Format month with leading zero
+            month_str = f"{month_data['month']:02d}"
+            
+            params = [year_str, month_str]
+            
+            if category_filter:
+                params.append(category_filter)
+            
+            month_expenses = conn.execute(base_query, params).fetchall()
+            
+            # Calculate month total - handle empty data
+            month_total = sum(expense['total'] for expense in month_expenses) if month_expenses else 0
+            
+            if month_total > 0:  # Only add months with actual expenses
+                month_totals.append(month_total)
+                
+                # Store data for analysis
+                historical_data.append({
+                    'year_month': f"{year_str}-{month_str}",
+                    'expenses': month_expenses,
+                    'total': month_total
+                })
+        
+        # Skip prediction if not enough data
+        prediction = None
+        predicted_categories = []
+        
+        if month_totals and len(month_totals) > 0:
+            # Simple prediction based on average of previous months
+            avg_total = sum(month_totals) / len(month_totals)
+            
+            # Get category breakdown from historical data
+            category_totals = {}
+            category_counts = {}
+            
+            for month in historical_data:
+                for expense in month['expenses']:
+                    cat = expense['category']
+                    if cat not in category_totals:
+                        category_totals[cat] = 0
+                        category_counts[cat] = 0
+                    
+                    category_totals[cat] += expense['total']
+                    category_counts[cat] += 1
+            
+            # Calculate predicted amounts per category
+            for cat in category_totals:
+                if category_counts[cat] > 0:
+                    avg_amount = category_totals[cat] / category_counts[cat]
+                    predicted_categories.append({
+                        'category': cat,
+                        'amount': avg_amount,
+                        'frequency': category_counts[cat] / len(historical_data) * 100
+                    })
+            
+            # Sort by frequency (most common first)
+            predicted_categories.sort(key=lambda x: x['frequency'], reverse=True)
+            
+            # Final prediction
+            prediction = {
+                'total': avg_total,
+                'categories': predicted_categories
+            }
+    
+    # Get next month for prediction
+    next_month = month + 1
+    next_year = year
+    
+    if next_month > 12:
+        next_month = 1
+        next_year += 1
+        
+    next_month_str = f"{next_year}-{next_month:02d}"
+    
+    return render_template('forecasts.html',
+                          historical_data=historical_data,
+                          prediction=prediction,
+                          month_filter=month_filter,
+                          next_month=next_month_str,
+                          category_filter=category_filter,
+                          categories=sorted(set(categories)) if categories else [])
+
+# Income Tracking
+@app.route('/income', methods=['GET'])
+def income():
+    # Default to all time if no date filters provided
+    from_date = ''
+    to_date = ''
+    source_filter = request.args.get('source', '')
+    
+    query = 'SELECT * FROM income_entries WHERE 1=1'
+    params = []
+    
+    if from_date:
+        query += ' AND date >= ?'
+        params.append(from_date)
+    
+    if to_date:
+        query += ' AND date <= ?'
+        params.append(to_date)
+    
+    if source_filter:
+        query += ' AND source = ?'
+        params.append(source_filter)
+    
+    query += ' ORDER BY date DESC'
+    
+    with get_db_connection() as conn:
+        income_entries = conn.execute(query, params).fetchall()
+        
+        # Get total income
+        total_query = 'SELECT SUM(amount) as total FROM income_entries WHERE 1=1'
+        total_params = []
+        
+        if from_date:
+            total_query += ' AND date >= ?'
+            total_params.append(from_date)
+        
+        if to_date:
+            total_query += ' AND date <= ?'
+            total_params.append(to_date)
+        
+        if source_filter:
+            total_query += ' AND source = ?'
+            total_params.append(source_filter)
+        
+        total_income = conn.execute(total_query, total_params).fetchone()
+        
+        # Get recurring income
+        recurring_query = 'SELECT SUM(amount) as total FROM income_entries WHERE recurring = 1'
+        recurring_total = conn.execute(recurring_query).fetchone()
+        
+        # Get monthly average (for the selected period)
+        if from_date and to_date:
+            start = datetime.strptime(from_date, '%Y-%m-%d')
+            end = datetime.strptime(to_date, '%Y-%m-%d')
+            months = (end.year - start.year) * 12 + end.month - start.month + 1
+            monthly_avg = total_income['total'] / months if total_income['total'] and months > 0 else 0
+        else:
+            monthly_avg = 0
+        
+        # Get available sources for filter
+        sources = conn.execute('SELECT DISTINCT source FROM income_entries ORDER BY source').fetchall()
+        sources = [s['source'] for s in sources]
+    
+    return render_template('income.html',
+                          income_entries=income_entries,
+                          total=total_income['total'] if total_income['total'] else 0,
+                          recurring_total=recurring_total['total'] if recurring_total['total'] else 0,
+                          monthly_avg=monthly_avg,
+                          sources=sources,
+                          from_date=from_date,
+                          to_date=to_date,
+                          source_filter=source_filter)
+
+@app.route('/income/add', methods=['POST'])
+def add_income():
+    source = request.form.get('source')
+    amount = float(request.form.get('amount', 0))
+    date = request.form.get('date')
+    description = request.form.get('description', '')
+    recurring = 1 if request.form.get('recurring') else 0
+    recurring_interval = request.form.get('recurring_interval') if recurring else None
+    
+    # Validate inputs
+    if not source or amount <= 0 or not date:
+        flash('Please provide a source, valid amount, and date', 'danger')
+        return redirect(url_for('income'))
+    
+    with get_db_connection() as conn:
+        conn.execute('''
+            INSERT INTO income_entries 
+            (source, amount, date, description, recurring, recurring_interval)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (source, amount, date, description, recurring, recurring_interval))
+        conn.commit()
+    
+    flash('Income entry added successfully!', 'success')
+    return redirect(url_for('income'))
+
+@app.route('/income/edit/<int:id>', methods=['POST'])
+def edit_income(id):
+    source = request.form.get('source')
+    amount = float(request.form.get('amount', 0))
+    date = request.form.get('date')
+    description = request.form.get('description', '')
+    recurring = 1 if request.form.get('recurring') else 0
+    recurring_interval = request.form.get('recurring_interval') if recurring else None
+    
+    # Validate inputs
+    if not source or amount <= 0 or not date:
+        flash('Please provide a source, valid amount, and date', 'danger')
+        return redirect(url_for('income'))
+    
+    with get_db_connection() as conn:
+        conn.execute('''
+            UPDATE income_entries
+            SET source = ?, amount = ?, date = ?, description = ?, 
+                recurring = ?, recurring_interval = ?
+            WHERE id = ?
+        ''', (source, amount, date, description, recurring, recurring_interval, id))
+        conn.commit()
+    
+    flash('Income entry updated successfully!', 'success')
+    return redirect(url_for('income'))
+
+@app.route('/income/delete/<int:id>', methods=['POST'])
+def delete_income(id):
+    with get_db_connection() as conn:
+        conn.execute('DELETE FROM income_entries WHERE id = ?', (id,))
+        conn.commit()
+    
+    flash('Income entry deleted successfully!', 'success')
+    return redirect(url_for('income'))
 
 # Run the app
 if __name__ == '__main__':

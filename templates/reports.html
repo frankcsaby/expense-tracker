@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% block title %}Expense Reports{% endblock %}
 {% block content %}
 <div class="row mb-4">
     <div class="col">
@@ -40,7 +41,7 @@
         <div class="card bg-light shadow-sm">
             <div class="card-body text-center">
                 <h5 class="card-title">Total Expenses</h5>
-                <h3 class="card-text text-primary">{{ currency.symbol }}{{ summary.grand_total|round(2) }}</h3>
+                <h3 class="card-text text-primary">{{ g.currency.symbol }}{{ summary.grand_total|round(2) }}</h3>
             </div>
         </div>
     </div>
@@ -56,7 +57,7 @@
         <div class="card bg-light shadow-sm">
             <div class="card-body text-center">
                 <h5 class="card-title">Average Amount</h5>
-                <h3 class="card-text text-info">{{ currency.symbol }}{{ summary.average|round(2) }}</h3>
+                <h3 class="card-text text-info">{{ g.currency.symbol }}{{ summary.average|round(2) }}</h3>
             </div>
         </div>
     </div>
@@ -89,9 +90,9 @@
                     {% else %}
                     <td>{{ item.period }}</td>
                     {% endif %}
-                    <td>{{ currency.symbol }}{{ item.total|round(2) }}</td>
+                    <td>{{ g.currency.symbol }}{{ item.total|round(2) }}</td>
                     <td>{{ item.count }}</td>
-                    <td>{{ currency.symbol }}{{ (item.total / item.count)|round(2) }}</td>
+                    <td>{{ g.currency.symbol }}{{ (item.total / item.count)|round(2) }}</td>
                 </tr>
                 {% else %}
                 <tr>
