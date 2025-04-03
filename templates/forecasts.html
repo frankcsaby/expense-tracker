@@ -1,0 +1,261 @@
+{% extends "layout.html" %}
+
+{% block title %}Spending Predictor{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-graph-up-arrow me-2"></i> Spending Predictor</h1>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">Analysis Filters</h5>
+                <button class="btn btn-sm btn-outline-secondary d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                    <i class="bi bi-funnel"></i> Filters
+                </button>
+            </div>
+            <div class="collapse d-md-block" id="filterCollapse">
+                <form action="{{ url_for('forecasts') }}" method="GET" class="row g-3">
+                    <div class="col-md-6 col-sm-12">
+                        <label for="month" class="form-label">Reference Month</label>
+                        <input type="month" class="form-control" id="month" name="month" value="{{ month_filter }}">
+                        <small class="text-muted">Choose a month to view historical data and generate predictions</small>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {% if category_filter == category %}selected{% endif %}>{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Analyze Data</button>
+                        <a href="{{ url_for('forecasts') }}" class="btn btn-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction for Next Month -->
+    {% if prediction %}
+    <div class="card border-primary mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Spending Prediction for {{ next_month }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Predicted Total</h5>
+                            <p class="display-4 text-primary">{{ g.currency.symbol }}{{ prediction.total|round(2) }}</p>
+                            <p class="text-muted">Based on your historical spending</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h5>Category Breakdown</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Predicted</th>
+                                    <th>Frequency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in prediction.categories %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ category.category }}</span>
+                                    </td>
+                                    <td>{{ g.currency.symbol }}{{ category.amount|round(2) }}</td>
+                                    <td>
+                                        <div class="category-progress">
+                                            <div 
+                                                class="progress-bar" 
+                                                role="progressbar" 
+                                                style="width: {{ category.frequency }}%"
+                                                aria-valuenow="{{ category.frequency|round }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        {{ category.frequency|round }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white">
+            <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i> This prediction is based on your spending patterns from the last {{ historical_data|length }} months.</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i> Not enough historical data to make predictions. Please continue tracking your expenses.
+    </div>
+    {% endif %}
+
+    <!-- Historical Data -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Historical Spending Analysis</h5>
+        </div>
+        <div class="card-body">
+            {% if historical_data %}
+            <div class="mb-4">
+                <canvas id="spendingHistoryChart" height="300"></canvas>
+            </div>
+            
+            <h5 class="mb-3">Monthly Breakdown</h5>
+            <div class="accordion" id="historicalDataAccordion">
+                {% for month_data in historical_data %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                            {{ month_data.year_month }} - {{ g.currency.symbol }}{{ month_data.total|round(2) }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#historicalDataAccordion">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                            <th>% of Month</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for expense in month_data.expenses %}
+                                        <tr>
+                                            <td>{{ expense.category }}</td>
+                                            <td>{{ g.currency.symbol }}{{ expense.total|round(2) }}</td>
+                                            <td>{{ (expense.total / month_data.total * 100)|round }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bar-chart-line fs-1 text-muted mb-3"></i>
+                <h5>No historical data available</h5>
+                <p class="text-muted">Start tracking your expenses to see spending patterns</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Expenses
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize chart if Chart.js is loaded
+    if (typeof Chart !== 'undefined') {
+        try {
+            // Parse historical data safely
+            var histData = JSON.parse('{{ historical_data|tojson }}');
+            
+            if (histData && histData.length > 0) {
+                var chartCtx = document.getElementById('spendingHistoryChart').getContext('2d');
+                
+                // Format data for chart
+                var chartLabels = [];
+                var chartValues = [];
+                
+                for (var i = histData.length - 1; i >= 0; i--) {
+                    chartLabels.push(histData[i].year_month);
+                    chartValues.push(histData[i].total);
+                }
+                
+                // Create the chart
+                var chart = new Chart(chartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Monthly Spending',
+                            data: chartValues,
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return '{{ g.currency.symbol }} ' + context.raw.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '{{ g.currency.symbol }} ' + value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Make chart responsive to dark mode changes
+                if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
+                    chart.options.scales.y.grid.color = 'rgba(255, 255, 255, 0.1)';
+                    chart.options.scales.x.grid.color = 'rgba(255, 255, 255, 0.1)';
+                    chart.update();
+                }
+            }
+        } catch (error) {
+            console.error('Error initializing chart:', error);
+        }
+    }
+    
+    // Check for mobile view
+    if (window.matchMedia("(max-width: 767px)").matches) {
+        // Ensure filters collapse by default on mobile
+        var filterCollapse = document.getElementById('filterCollapse');
+        if (filterCollapse && !window.location.search) {
+            var bsCollapse = new bootstrap.Collapse(filterCollapse, {
+                toggle: false
+            });
+        }
+    }
+});
+</script>
+{% endblock %} 

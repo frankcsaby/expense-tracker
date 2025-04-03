@@ -1,0 +1,419 @@
+{% extends "layout.html" %}
+
+{% block title %}Income Tracking{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-cash-stack me-2"></i> Income Tracking</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newIncomeModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Income
+        </button>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('income') }}" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="from_date" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="to_date" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="source" class="form-label">Source</label>
+                    <select class="form-select" id="source" name="source">
+                        <option value="">All Sources</option>
+                        {% for source in sources %}
+                        <option value="{{ source }}" {% if source_filter == source %}selected{% endif %}>{{ source }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('income') }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3 mb-md-0">
+            <div class="card border-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Average</h5>
+                    <p class="display-5">{{ g.currency.symbol }}{{ monthly_avg|round(2) }}</p>
+                    <p class="text-muted">Average income per month</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3 mb-md-0">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Income</h5>
+                    <p class="display-5">{{ g.currency.symbol }}{{ total|round(2) }}</p>
+                    <p class="text-muted">For selected period</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Recurring Income</h5>
+                    <p class="display-5">{{ g.currency.symbol }}{{ recurring_total|round(2) }}</p>
+                    <p class="text-muted">Monthly recurring income</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Table -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Income Entries</h5>
+            <span>
+                {% if from_date and to_date %}
+                {{ from_date }} to {{ to_date }}
+                {% elif from_date %}
+                From {{ from_date }}
+                {% elif to_date %}
+                Until {{ to_date }}
+                {% else %}
+                All time
+                {% endif %}
+                {% if source_filter %} ({{ source_filter }}){% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if income_entries %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Recurring</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in income_entries %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-success">{{ entry.source }}</span>
+                            </td>
+                            <td class="fw-bold text-success">{{ g.currency.symbol }}{{ entry.amount|round(2) }}</td>
+                            <td>{{ entry.date }}</td>
+                            <td>
+                                {% if entry.description %}
+                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ entry.description }}">
+                                    {{ entry.description }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if entry.recurring == 1 %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    {{ entry.recurring_interval if entry.recurring_interval else 'Monthly' }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editIncomeModal"
+                                            data-id="{{ entry.id }}"
+                                            data-source="{{ entry.source }}"
+                                            data-amount="{{ entry.amount }}"
+                                            data-date="{{ entry.date }}"
+                                            data-description="{{ entry.description or '' }}"
+                                            data-recurring="{{ entry.recurring }}"
+                                            data-interval="{{ entry.recurring_interval or '' }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteIncomeModal" data-id="{{ entry.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-cash-coin fs-1 text-muted mb-3"></i>
+                <h5>No income entries found</h5>
+                <p class="text-muted">Try changing the filters or add your first income entry</p>
+                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#newIncomeModal">
+                    <i class="bi bi-plus-circle me-1"></i> Add Income
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Income Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Income Trends</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="incomeChart" height="300"></canvas>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Expenses
+        </a>
+    </div>
+</div>
+
+<!-- New Income Modal -->
+<div class="modal fade" id="newIncomeModal" tabindex="-1" aria-labelledby="newIncomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newIncomeModalLabel">Add New Income</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_income') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="source" class="form-label">Source</label>
+                        <input type="text" class="form-control" id="add_source" name="source" list="sources" required>
+                        <datalist id="sources">
+                            {% for source in sources %}
+                            <option value="{{ source }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="amount" name="amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="recurring" name="recurring">
+                        <label class="form-check-label" for="recurring">Recurring Income</label>
+                    </div>
+                    <div class="mb-3" id="recurringOptions" style="display: none;">
+                        <label for="recurring_interval" class="form-label">Interval</label>
+                        <select class="form-select" id="recurring_interval" name="recurring_interval">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="biweekly">Bi-weekly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Income</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Income Modal -->
+<div class="modal fade" id="editIncomeModal" tabindex="-1" aria-labelledby="editIncomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editIncomeModalLabel">Edit Income</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('edit_income', id=0) }}" method="POST" id="editIncomeForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_source" class="form-label">Source</label>
+                        <input type="text" class="form-control" id="edit_source" name="source" list="sources" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ g.currency.symbol }}</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="edit_amount" name="amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="edit_date" name="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description (optional)</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit_recurring" name="recurring">
+                        <label class="form-check-label" for="edit_recurring">Recurring Income</label>
+                    </div>
+                    <div class="mb-3" id="editRecurringOptions">
+                        <label for="edit_recurring_interval" class="form-label">Interval</label>
+                        <select class="form-select" id="edit_recurring_interval" name="recurring_interval">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="biweekly">Bi-weekly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Income Modal -->
+<div class="modal fade" id="deleteIncomeModal" tabindex="-1" aria-labelledby="deleteIncomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteIncomeModalLabel">Delete Income Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this income entry? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_income', id=0) }}" method="POST" id="deleteIncomeForm">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle recurring options on checkbox change
+        const recurringCheckbox = document.getElementById('recurring');
+        const recurringOptions = document.getElementById('recurringOptions');
+        
+        if (recurringCheckbox && recurringOptions) {
+            recurringCheckbox.addEventListener('change', function() {
+                recurringOptions.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // Edit income modal
+        const editIncomeModal = document.getElementById('editIncomeModal');
+        if (editIncomeModal) {
+            editIncomeModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                const source = button.getAttribute('data-source');
+                const amount = button.getAttribute('data-amount');
+                const date = button.getAttribute('data-date');
+                const description = button.getAttribute('data-description');
+                const recurring = button.getAttribute('data-recurring') === '1';
+                const interval = button.getAttribute('data-interval');
+                
+                const form = document.getElementById('editIncomeForm');
+                form.action = form.action.replace('/0', '/' + id);
+                
+                document.getElementById('edit_source').value = source;
+                document.getElementById('edit_amount').value = amount;
+                document.getElementById('edit_date').value = date;
+                document.getElementById('edit_description').value = description;
+                document.getElementById('edit_recurring').checked = recurring;
+                
+                const editRecurringOptions = document.getElementById('editRecurringOptions');
+                if (editRecurringOptions) {
+                    editRecurringOptions.style.display = recurring ? 'block' : 'none';
+                }
+                
+                if (recurring && interval) {
+                    document.getElementById('edit_recurring_interval').value = interval;
+                }
+            });
+            
+            // Toggle edit recurring options
+            const editRecurringCheckbox = document.getElementById('edit_recurring');
+            const editRecurringOptions = document.getElementById('editRecurringOptions');
+            
+            if (editRecurringCheckbox && editRecurringOptions) {
+                editRecurringCheckbox.addEventListener('change', function() {
+                    editRecurringOptions.style.display = this.checked ? 'block' : 'none';
+                });
+            }
+        }
+        
+        // Delete income modal
+        const deleteIncomeModal = document.getElementById('deleteIncomeModal');
+        if (deleteIncomeModal) {
+            deleteIncomeModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                
+                const form = document.getElementById('deleteIncomeForm');
+                form.action = form.action.replace('/0', '/' + id);
+            });
+        }
+        
+        // Create a simple chart (placeholder for real data)
+        const ctx = document.getElementById('incomeChart');
+        if (ctx) {
+            // This would be replaced by real data in production
+            const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Income',
+                    data: [1200, 1900, 1500, 2000, 1800, 2200],
+                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            };
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

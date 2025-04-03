@@ -9,7 +9,7 @@
 <div class="row">
     <!-- Budget Form -->
     <div class="col-md-4 mb-4">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm h-100">
             <div class="card-header bg-light">
                 <h5 class="card-title mb-0">Create/Update Budget</h5>
             </div>
@@ -40,6 +40,7 @@
                             <option value="monthly" selected>Monthly</option>
                             <option value="yearly">Yearly</option>
                         </select>
+                        <small class="form-text text-muted">Choose how often this budget resets</small>
                     </div>
                     
                     <div class="d-grid">
@@ -59,7 +60,9 @@
                 <h5 class="card-title mb-0">Current Budgets</h5>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                {% if budgets %}
+                <!-- Desktop View -->
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
@@ -76,21 +79,52 @@
                                 <td>{{ currency.symbol }}{{ budget.amount|round(2) }}</td>
                                 <td>{{ budget.period.capitalize() }}</td>
                                 <td>
-                                    <form action="{{ url_for('delete_budget', id=budget.id) }}" method="POST" style="display: inline;">
+                                    <form action="{{ url_for('delete_budget', id=budget.id) }}" method="POST" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this budget?')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center py-3">No budgets created yet</td>
-                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Mobile View -->
+                <div class="d-md-none">
+                    <div class="budget-cards">
+                        {% for budget in budgets %}
+                        <div class="budget-card p-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-0">{{ budget.category }}</h6>
+                                    <span class="badge bg-secondary">{{ budget.period.capitalize() }}</span>
+                                </div>
+                                <div class="budget-amount fw-bold">
+                                    {{ currency.symbol }}{{ budget.amount|round(2) }}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-2">
+                                <form action="{{ url_for('delete_budget', id=budget.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this budget?')">
+                                        <i class="bi bi-trash me-1"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-wallet2 text-muted" style="font-size: 2rem;"></i>
+                    </div>
+                    <p class="mb-0">No budgets created yet</p>
+                    <p class="text-muted small">Use the form to create your first budget</p>
+                </div>
+                {% endif %}
             </div>
         </div>
         

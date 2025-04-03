@@ -119,22 +119,45 @@
             <div class="card-body">
                 <div class="row">
                     {% for budget in budget_comparison %}
-                    <div class="col-md-6 mb-3">
-                        <div class="card">
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="budget-card card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="card-subtitle">{{ budget.category }} ({{ budget.period.capitalize() }})</h6>
-                                    <span class="text-muted">{{ currency.symbol }}{{ budget.spent|round(2) }} / {{ currency.symbol }}{{ budget.budget|round(2) }}</span>
+                                    <h6 class="card-subtitle text-truncate" title="{{ budget.category }}">{{ budget.category }}</h6>
+                                    <span class="badge bg-secondary">{{ budget.period.capitalize() }}</span>
                                 </div>
-                                <div class="progress" style="height: 20px;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="budget-amount">{{ currency.symbol }}{{ budget.spent|round(2) }}</div>
+                                    <div class="budget-total text-muted">of {{ currency.symbol }}{{ budget.budget|round(2) }}</div>
+                                </div>
+                                <div class="progress budget-progress">
                                     {% if budget.percentage <= 60 %}
-                                    <div class="progress-bar bg-success" style="width: {% if budget.percentage > 100 %}100{% else %}{{ budget.percentage }}{% endif %}%">{{ budget.percentage }}%</div>
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                        style="width: {% if budget.percentage > 100 %}100{% else %}{{ budget.percentage }}{% endif %}%" 
+                                        aria-valuenow="{{ budget.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ budget.percentage }}%
+                                    </div>
                                     {% elif budget.percentage <= 85 %}
-                                    <div class="progress-bar bg-warning" style="width: {% if budget.percentage > 100 %}100{% else %}{{ budget.percentage }}{% endif %}%">{{ budget.percentage }}%</div>
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                        style="width: {% if budget.percentage > 100 %}100{% else %}{{ budget.percentage }}{% endif %}%" 
+                                        aria-valuenow="{{ budget.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ budget.percentage }}%
+                                    </div>
                                     {% else %}
-                                    <div class="progress-bar bg-danger" style="width: {% if budget.percentage > 100 %}100{% else %}{{ budget.percentage }}{% endif %}%">{{ budget.percentage }}%</div>
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                        style="width: {% if budget.percentage > 100 %}100{% else %}{{ budget.percentage }}{% endif %}%" 
+                                        aria-valuenow="{{ budget.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ budget.percentage }}%
+                                    </div>
                                     {% endif %}
                                 </div>
+                                {% if budget.percentage > 100 %}
+                                <div class="budget-warning mt-2">
+                                    <small class="text-danger">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Over budget by {{ currency.symbol }}{{ (budget.spent - budget.budget)|round(2) }}
+                                    </small>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
