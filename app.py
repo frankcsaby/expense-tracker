@@ -1,11 +1,24 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, g
-import sqlite3
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+import sqlite3
 from functools import wraps
 import os
 from contextlib import contextmanager
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_babel import Babel
+from config import Config
 
 app = Flask(__name__)
+app.config.from_object(Config)
+
+# Initialize extensions
+db = SQLAlchemy(app)
+babel = Babel(app)
+
+# Import models after db initialization
+from app.models import Expense, Budget, SavingsGoal, IncomeEntry
+
 app.secret_key = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
 
 # Available currencies
@@ -39,116 +52,24 @@ def before_request():
     g.currency_code = session.get('currency')
     g.currency = CURRENCIES[g.currency_code]
 
-# Database setup with context manager
-@contextmanager
-def get_db_connection():
-    conn = sqlite3.connect('expenses.db')
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-    finally:
-        conn.close()
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect(
+            app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''),
+            detect_types=sqlite3.PARSE_DECLTYPES
+        )
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
+@app.teardown_appcontext
+def close_db(error):
+    if hasattr(g, 'db'):
+        g.db.close()
 
 def init_db():
-    """Initialize the database with tables if they don't exist."""
-    with get_db_connection() as conn:
-        # Create expenses table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS expenses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                description TEXT NOT NULL,
-                amount REAL NOT NULL,
-                category TEXT,
-                date TEXT NOT NULL,
-                tags TEXT,
-                recurring INTEGER DEFAULT 0,
-                recurring_interval TEXT
-            )
-        ''')
-        
-        # Create budgets table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS budgets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                category TEXT NOT NULL,
-                amount REAL NOT NULL,
-                period TEXT NOT NULL,
-                start_date TEXT NOT NULL,
-                end_date TEXT,
-                notification_threshold REAL
-            )
-        ''')
-        
-        # Create settings table if it doesn't exist
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            )
-        ''')
-        
-        # Create savings_goals table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS savings_goals (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                target_amount REAL NOT NULL,
-                current_amount REAL DEFAULT 0,
-                start_date TEXT DEFAULT CURRENT_DATE,
-                target_date TEXT,
-                description TEXT,
-                status TEXT DEFAULT 'active'
-            )
-        ''')
-        
-        # Create predictions table (replacing forecasts)
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS predictions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                target_month TEXT NOT NULL,
-                predicted_amount REAL NOT NULL,
-                actual_amount REAL,
-                prediction_date TEXT DEFAULT CURRENT_DATE,
-                accuracy REAL,
-                notes TEXT
-            )
-        ''')
-        
-        # Create prediction_categories table for category breakdown
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS prediction_categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                prediction_id INTEGER,
-                category TEXT NOT NULL,
-                predicted_amount REAL NOT NULL,
-                actual_amount REAL,
-                FOREIGN KEY (prediction_id) REFERENCES predictions (id)
-            )
-        ''')
-        
-        # Create income_entries table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS income_entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                source TEXT NOT NULL,
-                amount REAL NOT NULL,
-                date TEXT NOT NULL,
-                description TEXT,
-                recurring INTEGER DEFAULT 0,
-                recurring_interval TEXT
-            )
-        ''')
-        
-        # Set default settings if not exist
-        conn.execute('''
-            INSERT OR IGNORE INTO settings (key, value)
-            VALUES ('currency', 'HUF')
-        ''')
-        
-        # Drop the forecasts table if it exists
-        conn.execute('DROP TABLE IF EXISTS forecasts')
-        
-        conn.commit()
+    with app.app_context():
+        db.create_all()
+        print("Database initialized successfully")
 
 # Validation
 def validate_expense(form_data):
@@ -226,7 +147,7 @@ def index():
     
     query += ' ORDER BY date DESC'
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         expenses = conn.execute(query, params).fetchall()
         # Get total expenses
         total_expenses = conn.execute('SELECT SUM(amount) as total FROM expenses').fetchone()
@@ -237,7 +158,7 @@ def index():
     
     # Get all available tags for the filter dropdown
     tags = []
-    with get_db_connection() as conn:
+    with get_db() as conn:
         tag_rows = conn.execute('SELECT name FROM tags ORDER BY name').fetchall()
         tags = [t['name'] for t in tag_rows]
     
@@ -286,7 +207,7 @@ def add_expense():
         tags = request.form.get('tags', '').split(',')
         tags = [tag.strip() for tag in tags if tag.strip()]
         
-        with get_db_connection() as conn:
+        with get_db() as conn:
             # Insert expense
             cursor = conn.execute(
                 'INSERT INTO expenses (description, amount, category, date, recurring, recurring_interval) VALUES (?, ?, ?, ?, ?, ?)',
@@ -322,7 +243,7 @@ def add_expense():
 # Edit expense
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_expense(id):
-    with get_db_connection() as conn:
+    with get_db() as conn:
         expense = conn.execute('SELECT * FROM expenses WHERE id = ?', (id,)).fetchone()
         
         if not expense:
@@ -403,7 +324,7 @@ def edit_expense(id):
 # Delete expense
 @app.route('/delete/<int:id>', methods=['POST'])
 def delete_expense(id):
-    with get_db_connection() as conn:
+    with get_db() as conn:
         # Delete expense (foreign key constraints will handle expense_tags)
         conn.execute('DELETE FROM expenses WHERE id = ?', (id,))
         conn.commit()
@@ -417,7 +338,7 @@ def analytics():
     period = request.args.get('period', 'all')
     chart_type = request.args.get('chart_type', 'category')
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         # Get current date and calculate time ranges
         today = datetime.today()
         
@@ -571,7 +492,7 @@ def manage_budgets():
             for error in errors:
                 flash(error, 'danger')
         else:
-            with get_db_connection() as conn:
+            with get_db() as conn:
                 # Check if budget for this category already exists
                 existing = conn.execute('SELECT id FROM budgets WHERE category = ?', (category,)).fetchone()
                 
@@ -594,7 +515,7 @@ def manage_budgets():
                 conn.commit()
     
     # Get all budgets
-    with get_db_connection() as conn:
+    with get_db() as conn:
         budgets = conn.execute('SELECT * FROM budgets ORDER BY category').fetchall()
         
         # Get available categories for the dropdown
@@ -614,7 +535,7 @@ def manage_budgets():
 # Delete budget
 @app.route('/budgets/delete/<int:id>', methods=['POST'])
 def delete_budget(id):
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('DELETE FROM budgets WHERE id = ?', (id,))
         conn.commit()
         flash('Budget deleted successfully!', 'success')
@@ -626,7 +547,7 @@ def delete_budget(id):
 def export_data():
     format_type = request.args.get('format', 'json')
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         # Get all expenses with their tags
         expenses = conn.execute('''
             SELECT e.*, GROUP_CONCAT(t.name) as tags
@@ -655,7 +576,7 @@ def export_data():
 # Tags API
 @app.route('/api/tags', methods=['GET'])
 def get_tags():
-    with get_db_connection() as conn:
+    with get_db() as conn:
         tags = conn.execute('SELECT name FROM tags ORDER BY name').fetchall()
         tags = [tag['name'] for tag in tags]
     
@@ -738,7 +659,7 @@ def reports():
         date_filter += ' AND date <= ?'
         query_params.append(to_date)
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         if grouping == 'category':
             # Group by category
             report_data = conn.execute(f'''
@@ -802,7 +723,7 @@ def reports():
 # Savings Goals
 @app.route('/savings-goals', methods=['GET'])
 def savings_goals():
-    with get_db_connection() as conn:
+    with get_db() as conn:
         goals = conn.execute('''
             SELECT * FROM savings_goals
             ORDER BY status, target_date
@@ -825,7 +746,7 @@ def add_savings_goal():
         flash('Please provide a name and a valid target amount', 'danger')
         return redirect(url_for('savings_goals'))
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('''
             INSERT INTO savings_goals 
             (name, target_amount, current_amount, start_date, target_date, description)
@@ -841,7 +762,7 @@ def update_savings_goal(id):
     current_amount = float(request.form.get('current_amount', 0))
     status = request.form.get('status')
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         goal = conn.execute('SELECT * FROM savings_goals WHERE id = ?', (id,)).fetchone()
         
         if not goal:
@@ -872,7 +793,7 @@ def edit_savings_goal(id):
         flash('Please provide a name and a valid target amount', 'danger')
         return redirect(url_for('savings_goals'))
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('''
             UPDATE savings_goals
             SET name = ?, target_amount = ?, current_amount = ?, 
@@ -886,7 +807,7 @@ def edit_savings_goal(id):
 
 @app.route('/savings-goals/delete/<int:id>', methods=['POST'])
 def delete_savings_goal(id):
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('DELETE FROM savings_goals WHERE id = ?', (id,))
         conn.commit()
     
@@ -939,7 +860,7 @@ def forecasts():
                 
             months_data.append({'year': prev_year, 'month': prev_month})
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         # Get categories for filter
         categories = conn.execute('SELECT DISTINCT category FROM expenses WHERE category IS NOT NULL').fetchall()
         categories = [c['category'] for c in categories if c['category']] + [c for c in EXPENSE_CATEGORIES if c not in [c['category'] for c in categories if c['category']]]
@@ -1068,7 +989,7 @@ def income():
     
     query += ' ORDER BY date DESC'
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         income_entries = conn.execute(query, params).fetchall()
         
         # Get total income
@@ -1130,7 +1051,7 @@ def add_income():
         flash('Please provide a source, valid amount, and date', 'danger')
         return redirect(url_for('income'))
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('''
             INSERT INTO income_entries 
             (source, amount, date, description, recurring, recurring_interval)
@@ -1155,7 +1076,7 @@ def edit_income(id):
         flash('Please provide a source, valid amount, and date', 'danger')
         return redirect(url_for('income'))
     
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('''
             UPDATE income_entries
             SET source = ?, amount = ?, date = ?, description = ?, 
@@ -1169,7 +1090,7 @@ def edit_income(id):
 
 @app.route('/income/delete/<int:id>', methods=['POST'])
 def delete_income(id):
-    with get_db_connection() as conn:
+    with get_db() as conn:
         conn.execute('DELETE FROM income_entries WHERE id = ?', (id,))
         conn.commit()
     
